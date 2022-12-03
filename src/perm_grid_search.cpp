@@ -81,6 +81,7 @@ void perm_grid_search::setGoal(Eigen::Matrix<int, 2, Eigen::Dynamic> goalPerm)
 {
   goalPerm_ = goalPerm;
   fromPermToPositions(goalPerm_, goalPos_);
+  clearProcess();  
 }
 
 void perm_grid_search::setRunTime(double max_runtime)
@@ -92,7 +93,18 @@ void perm_grid_search::setRunTime(double max_runtime)
 
 double perm_grid_search::getH(NodePtr node)
 {
-  return 0;
+  double h = 0.0;
+  MatrixXd diff = (node->agent_positions - goalPos_).cast<double>();
+  for (int i = 0; i < 2; ++i)
+  {
+    for (int j = 0; j < number_of_agents_; ++j)
+    {
+      h += fabs(diff(i,j));
+    }
+  }
+
+  // h = (node->agent_positions - goalPos_).norm();
+  return h;
 }
 
 double perm_grid_search::getG(NodePtr node)
@@ -180,6 +192,113 @@ bool perm_grid_search::entanglesWithOtherAgents(NodePtr current, double& arc_len
   return false;
 }
 
+void perm_grid_search::expandAndAddToQueue2(NodePtr current)
+{
+  for (int j=0; j<number_of_agents_-1; j++)
+  {
+    for (int i: {0, 1})
+    {
+      if (node_used_num_ == node_num_max_-1)
+      {
+        std::cout <<bold<<red<< "run out of memory." << std::endl;
+        return;
+      }
+
+      NodePtr neighbor = node_pool_[node_used_num_];
+      neighbor->perm = current->perm;
+      neighbor->agent_positions = current->agent_positions;
+      neighbor->interaction = current->interaction;        
+
+      int agent_current = current->perm(i, j);      
+      int agent_to_exchange = current->perm(i, j+1);
+      neighbor->perm(i, j) = agent_to_exchange;
+      neighbor->perm(i, j+1) = agent_current;         
+      neighbor->agent_positions(i, agent_current) += 1;
+      neighbor->agent_positions(i, agent_to_exchange) -= 1;    
+
+      for (int k=0; k<number_of_agents_; k++) //get agent start positions
+      {
+        for (int kk:{0,1})
+        {
+            if(neighbor->agent_positions(kk,neighbor->perm(kk,k)) != k)
+            {
+                std::cout << red << "wrong!!!!!!!!! " <<reset << std::endl;      
+                exit(-1);
+            }
+        }
+      }
+
+      int infront_or_behind = (current->agent_positions(1-i, agent_current) 
+                              < current->agent_positions(1-i, agent_to_exchange))?1:-1;
+
+      if (i==0) //first axis
+      {
+        infront_or_behind = -infront_or_behind; //just to keep meaning consistent, 
+                                                          //should not affect algorithm
+        if (agent_current< agent_to_exchange) //only keeping the upper diagonal 
+        {
+          neighbor->interaction(agent_current, agent_to_exchange) += 
+            infront_or_behind;
+        }
+        else
+        {
+          neighbor->interaction(agent_to_exchange, agent_current) += 
+            infront_or_behind;
+        }        
+      }
+      else //second axis
+      {
+        if (agent_current< agent_to_exchange) //LOWER diagonal
+        {
+          neighbor->interaction(agent_to_exchange, agent_current) += 
+            infront_or_behind;
+        }
+        else
+        {
+          neighbor->interaction(agent_current, agent_to_exchange) += 
+            infront_or_behind;
+        }          
+      }
+
+      neighbor-> previous = current;
+      neighbor->h = getH(neighbor); 
+      neighbor->g = getG(neighbor);
+      MatrixXi idx(3, number_of_agents_);
+      idx << neighbor->perm, neighbor->interaction.row(0);
+
+      NodePtr nodeptr;
+      nodeptr = generated_nodes_.find(idx);
+
+      if (nodeptr != NULL) //same node has been added to open list before
+      {
+        if (nodeptr->state == 1) //in open list
+        {
+          //update the node if the new one is better
+          // if (neighbor->g + bias_*neighbor->h < nodeptr->g + bias_*nodeptr->h)
+          // {
+          //   nodeptr->previous = current;
+          //   nodeptr->g = neighbor->g;
+          //   nodeptr->h = neighbor->h;
+          // }
+          continue;
+        }
+        else //already expanded, in closed list
+        {
+          continue;
+        }
+      }
+      else generated_nodes_.insert(idx, neighbor); //node generated yet
+
+      neighbor-> state = 1;
+      openList_.push(neighbor);
+      std::cout << red << "pushing into open list!" <<reset << std::endl;      
+      node_used_num_ += 1;   
+      // std::cout<<" "<<node_used_num_<<" ";
+
+      cont:;
+    }
+  }
+}
 
 void perm_grid_search::expandAndAddToQueue(NodePtr current)
 {
@@ -253,8 +372,8 @@ void perm_grid_search::expandAndAddToQueue(NodePtr current)
           infront_or_behind*j;
       }
 
-      neighbor->h = (goalPos_ - neighbor->agent_positions).norm();
-      neighbor->g = current->g + 2;
+      neighbor->h = getH(neighbor);
+      neighbor->g = current->g + 2.0;
       neighbor->next_agent = (neighbor->next_agent+1)%number_of_agents_;
       if (neighbor->next_agent == 0) neighbor-> index +=1;
 
@@ -303,12 +422,6 @@ void perm_grid_search::expandAndAddToQueue(NodePtr current)
   }
 }
 
-void perm_grid_search::expandAndAddToQueue(const Eigen::Matrix<double, 6, 1>& initstates)
-{
-
-
-}
-
 
 void perm_grid_search::clearProcess()
 {
@@ -347,7 +460,7 @@ bool perm_grid_search::run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,
   startPtr->index = 0;
   startPtr->perm = start_perm;
   startPtr->interaction = interaction;
-  startPtr-> g =0;
+  startPtr-> g =0.0;
   fromPermToPositions(start_perm, startPtr->agent_positions);
   // for (int i=0; i<number_of_agents_; i++) //get agent start positions
   // {
@@ -402,7 +515,7 @@ bool perm_grid_search::run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,
     
     }
 
-    expandAndAddToQueue(current_ptr);
+    expandAndAddToQueue2(current_ptr);
 
     if (node_used_num_ == node_num_max_-1)
     {

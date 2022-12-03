@@ -14,8 +14,8 @@ int main(int argc, char *argv[]) {
 	start_perm<< 0, 1, 2, 3, 4,
 				 0, 1, 2, 3, 4;
 	Eigen::MatrixXi goal_perm(2,5);
-	goal_perm<< 0, 1, 2, 4, 3,
-				 0, 1, 2, 3, 4;	
+	goal_perm<< 4, 3, 2, 1, 0,
+				 4, 3, 2, 1, 0;	
 	Eigen::MatrixXi start_interaction = Eigen::MatrixXi::Zero(5, 5);
 	perm_search ->setGoal(goal_perm);
 	int search_status = 0;
