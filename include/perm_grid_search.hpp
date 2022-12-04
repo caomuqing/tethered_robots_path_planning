@@ -145,7 +145,8 @@ public:
 
   double getCost();
   void generatePwpOut();
-  void getPath(std::vector<Eigen::Vector3d>& result);
+  void getPermPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
+  void getPosPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
   void getRuntime(double& runtime_this_round, double& time_spent_contact_pt, int& node_used_num);
 
 protected:
@@ -183,6 +184,8 @@ private:
   Eigen::Matrix<int, 2, Eigen::Dynamic> goalPos_;
 
   std::vector<NodePtr> node_pool_;
+  std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> perm_path_;
+  std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> pos_path_;
 
 };
 

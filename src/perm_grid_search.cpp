@@ -122,7 +122,9 @@ double perm_grid_search::h(Eigen::Vector2d pos)
 
 void perm_grid_search::recoverPath(NodePtr result_ptr)
 {
-  std::vector<Eigen::Matrix<int, 2, Dynamic>> perm_path;
+  perm_path_.clear();
+  pos_path_.clear();
+  std::vector<Eigen::Matrix<int, 2, Dynamic>> perm_path, pos_path;
   if (result_ptr == NULL)
   {
     return;
@@ -135,30 +137,29 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
     std::cout <<bold<<green<< "feasible permutation path is" << std::endl;
     std::cout <<bold<<green<< tmp->perm << std::endl;
     perm_path.push_back(tmp->perm);
+    pos_path.push_back(tmp->agent_positions);
     tmp = tmp->previous;
   }
 
   std::reverse(std::begin(perm_path), std::end(perm_path));  
+  std::reverse(std::begin(pos_path), std::end(pos_path));  
+  perm_path_ = perm_path;
+  pos_path_ = pos_path;
 }
 
-void perm_grid_search::getPath(std::vector<Eigen::Vector3d>& result)
+void perm_grid_search::getPermPath(std::vector<Eigen::Matrix<int, 2, Dynamic>>& result)
 {
   result.clear();
 
-  if (best_node_ptr_ == NULL)
-  {
-    return;
-  }
+  result = perm_path_;
 
-  NodePtr tmp = best_node_ptr_;
+}
 
-  while (tmp != NULL)
-  {
+void perm_grid_search::getPosPath(std::vector<Eigen::Matrix<int, 2, Dynamic>>& result)
+{
+  result.clear();
 
-    tmp = tmp->previous;
-  }
-
-  std::reverse(std::begin(result), std::end(result));  
+  result = pos_path_;
 
 }
 
