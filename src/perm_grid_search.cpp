@@ -134,8 +134,10 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
 
   while (tmp != NULL)
   {
-    std::cout <<bold<<green<< "feasible permutation path is" << std::endl;
-    std::cout <<bold<<green<< tmp->perm << std::endl;
+    // std::cout <<bold<<green<< "feasible permutation path is" << std::endl;
+    // std::cout <<bold<<green<< tmp->perm << std::endl;
+    std::cout <<bold<<green<< "feasible agent positions path is" << std::endl;
+    std::cout <<bold<<green<< tmp->agent_positions << std::endl;    
     perm_path.push_back(tmp->perm);
     pos_path.push_back(tmp->agent_positions);
     tmp = tmp->previous;

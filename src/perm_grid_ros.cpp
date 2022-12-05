@@ -7,7 +7,9 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <rviz_visual_tools/rviz_visual_tools.h>
+#include "termcolor.hpp"
 
+using namespace termcolor;
 using namespace Eigen;
 typedef neptimers::Timer MyTimer;
 ros::Timer SetpointpubCBTimer_;
@@ -19,7 +21,7 @@ double max_vel_along_grid_ = 1.0; //this refer to the actual geometric unit, not
 double max_acc_along_grid_ = 1.0;
 std::unique_ptr<perm_grid_search> perm_search_;
 std::vector<Eigen::Matrix<int, 2, Dynamic>> pos_path_;
-int number_of_agents_ = 5;
+int number_of_agents_ = 8;
 Eigen::Matrix<double, Dynamic, 3> agent_pos_;
 MyTimer setpoint_timer_;
 bool publishing_setpoint_ = false;
@@ -32,13 +34,13 @@ int main(int argc, char *argv[]) {
 	ros::init(argc, argv, "perm_grid_ros");
 	ros::NodeHandle nh("~");
 
-	perm_search_ = std::unique_ptr<perm_grid_search>(new perm_grid_search(5));
-	Eigen::MatrixXi start_perm(2,5);
-	start_perm<< 0, 1, 2, 3, 4,
-				 0, 1, 2, 3, 4;
-	Eigen::MatrixXi goal_perm(2,5);
-	goal_perm<< 4, 3, 2, 1, 0,
-				 4, 3, 2, 1, 0;	
+	perm_search_ = std::unique_ptr<perm_grid_search>(new perm_grid_search(number_of_agents_));
+	Eigen::MatrixXi start_perm(2,number_of_agents_);
+	start_perm<< 0, 1, 2, 3, 4, 5, 6, 7,
+				 0, 1, 2, 3, 4, 5, 6, 7;
+	Eigen::MatrixXi goal_perm(2,number_of_agents_);
+	goal_perm<< 7, 6, 5, 4, 3, 2, 1, 0,
+				 7, 6, 5, 4, 3, 2, 1, 0;	
 
 	agent_pos_ = MatrixXd::Zero(number_of_agents_, 3);
 	for (int i = 0; i < number_of_agents_; ++i)
@@ -47,7 +49,7 @@ int main(int argc, char *argv[]) {
 	 	agent_pos_(i,1) = grid_pos_origin_(1)-start_perm(i)*grid_size_(1);
 	}			
 
-	Eigen::MatrixXi start_interaction = Eigen::MatrixXi::Zero(5, 5);
+	Eigen::MatrixXi start_interaction = Eigen::MatrixXi::Zero(number_of_agents_, number_of_agents_);
 	perm_search_ ->setGoal(goal_perm);
 	int search_status = 0;
 	perm_search_ ->run(start_perm, start_interaction, search_status);
@@ -75,6 +77,8 @@ void SetpointpubCB(const ros::TimerEvent& e)
 {
 	if (!publishing_setpoint_) return;
 	double time_elapsed = setpoint_timer_.ElapsedMs()/1000.0;
+	// std::cout<<green<<"time elapsed is "<<time_elapsed<<" s"<<std::endl;
+
 	for (int i = 0; i < pos_path_.size()-1; ++i)
 	{
 		double time_for_this_seg = ((pos_path_[i+1]-pos_path_[i]).cast<double>().
@@ -91,6 +95,10 @@ void SetpointpubCB(const ros::TimerEvent& e)
 							grid_pos.row(0).transpose()*grid_size_(0);
 		agent_pos_.col(1) = Eigen::MatrixXd::Ones(number_of_agents_,1) * grid_pos_origin_(1)-
 							grid_pos.row(1).transpose()*grid_size_(1);							
+		std::cout<<green<<"current path segment is "<<i<<std::endl;
+		std::cout<<green<<"agent pos path  is "<<std::endl;
+		std::cout<<green<<agent_pos_<<std::endl;
+		break;
 	}
 
 

@@ -77,3 +77,7 @@ include_directories(
 add_executable(perm_search_node src/perm_grid_ros.cpp src/perm_grid_search.cpp)
 add_dependencies(perm_search_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(perm_search_node ${catkin_LIBRARIES})
+
+add_executable(planning_ros_node src/planning_ros.cpp src/perm_grid_search.cpp)
+add_dependencies(planning_ros_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(planning_ros_node ${catkin_LIBRARIES})

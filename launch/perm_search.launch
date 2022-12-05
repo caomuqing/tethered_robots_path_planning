@@ -1,12 +1,10 @@
 <launch>
 
 
-	<node name="neptune2" pkg="neptune2" type="perm_search_node" output="screen" clear_params="false" launch-prefix="gdb -ex run --args"> 
+	<node name="neptune2" pkg="neptune2" type="perm_search_node" output="screen" clear_params="false" > 
 		
 	</node>
 
 
 </launch>
 
-
-<!-- launch-prefix="xterm -e gdb -ex run args" -->
