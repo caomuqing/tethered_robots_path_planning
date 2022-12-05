@@ -135,6 +135,7 @@ void getProjectionPlane()
     projected_x.push_back(agent_pos_projected(i,0));
     projected_y.push_back(agent_pos_projected(i,1));
   }
-  std::vector<int>  perm_x = sort_indexes(projected_x);
+  auto perm_x = sort_indexes(projected_x);
+  auto perm_y = sort_indexes(projected_y);
 
 }
