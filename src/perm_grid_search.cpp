@@ -236,7 +236,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
 
       if (i==0) //first axis
       {
-        infront_or_behind = -infront_or_behind; //just to keep meaning consistent, 
+        // infront_or_behind = -infront_or_behind; //just to keep meaning consistent, 
                                                           //should not affect algorithm
         if (agent_current< agent_to_exchange) //only keeping the upper diagonal 
         {

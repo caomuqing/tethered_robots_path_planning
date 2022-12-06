@@ -15,14 +15,17 @@
 #include <boost/bind.hpp>
 #include <numeric>      // std::iota
 #include <algorithm>    // std::sort, std::stable_sort
+#include <std_msgs/Float32MultiArray.h>
+#include <trajectory_msgs/MultiDOFJointTrajectory.h>
 
 using namespace termcolor;
 using namespace Eigen;
 typedef neptimers::Timer MyTimer;
 
 ros::Publisher positions_pub_;
+std::vector<ros::Publisher> cmd_pub_vec_;
 
-Vector2d grid_pos_origin_(0.0, 5.0);
+Vector2d grid_pos_origin_(0.0, 0.0);
 Vector2d grid_size_(1.0, 1.0);
 double max_vel_along_grid_ = 1.0; //this refer to the actual geometric unit, not grid unit
 double max_acc_along_grid_ = 1.0;
@@ -30,9 +33,14 @@ std::unique_ptr<perm_grid_search> perm_search_;
 std::vector<Eigen::Matrix<int, 2, Dynamic>> pos_path_;
 int number_of_agents_ = 8;
 Eigen::Matrix<double, Dynamic, 3> agent_pos_, agent_pos_prev_;
-MyTimer setpoint_timer_;
-bool publishing_setpoint_ = false;
+Eigen::Matrix<double, 2, Dynamic> agent_pos_proj_, agent_pos_proj_prev_;
+MatrixXi agent_interaction_;
+
+MyTimer setpoint_timer_, update_timer_;
 std::vector<MyTimer> timer_getting_odoms_;
+
+bool found_projection_ = false;
+bool publishing_setpoint_ = false;
 ros::Timer SetpointpubCBTimer_;
 bool gotten_all_odoms_ = false;
 double tolerance_init_distance_ = 0.5;
@@ -43,6 +51,12 @@ Eigen::Matrix<int, 2, Dynamic> agent_perm_;
 void SetpointpubCB(const ros::TimerEvent& e);
 void odomCB(const nav_msgs::Odometry msg, int id);
 void getProjectionPlane();
+void getAgentPerm(Matrix<double, 2, Dynamic>& agent_pos_projected, 
+                        Matrix<int, 2, Dynamic>& agent_perm);
+void getAgentPosFromPerm(Matrix<double, 2, Dynamic>& agent_pos_projected, 
+                        Matrix<int, 2, Dynamic>& agent_perm);
+void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg);
+void publishTrajCmd(MatrixXd& agents_cmd_pva);
 
 std_msgs::ColorRGBA getColorJetInt(int id, int min, int max);
 

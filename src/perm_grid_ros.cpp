@@ -15,7 +15,7 @@ typedef neptimers::Timer MyTimer;
 ros::Timer SetpointpubCBTimer_;
 ros::Publisher positions_pub_;
 
-Vector2d grid_pos_origin_(0.0, 5.0);
+Vector2d grid_pos_origin_(0.0, 0.0);
 Vector2d grid_size_(1.0, 1.0);
 double max_vel_along_grid_ = 1.0; //this refer to the actual geometric unit, not grid unit
 double max_acc_along_grid_ = 1.0;
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < number_of_agents_; ++i)
 	{
 	 	agent_pos_(i,0) = grid_pos_origin_(0)+start_perm(i)*grid_size_(0);
-	 	agent_pos_(i,1) = grid_pos_origin_(1)-start_perm(i)*grid_size_(1);
+	 	agent_pos_(i,1) = grid_pos_origin_(1)+start_perm(i)*grid_size_(1);
 	}			
 
 	Eigen::MatrixXi start_interaction = Eigen::MatrixXi::Zero(number_of_agents_, number_of_agents_);
@@ -93,7 +93,7 @@ void SetpointpubCB(const ros::TimerEvent& e)
 						(pos_path_[i+1]-pos_path_[i]).cast<double>()*time_elapsed/time_for_this_seg;
 		agent_pos_.col(0) = Eigen::MatrixXd::Ones(number_of_agents_,1) * grid_pos_origin_(0)+
 							grid_pos.row(0).transpose()*grid_size_(0);
-		agent_pos_.col(1) = Eigen::MatrixXd::Ones(number_of_agents_,1) * grid_pos_origin_(1)-
+		agent_pos_.col(1) = Eigen::MatrixXd::Ones(number_of_agents_,1) * grid_pos_origin_(1)+
 							grid_pos.row(1).transpose()*grid_size_(1);							
 		std::cout<<green<<"current path segment is "<<i<<std::endl;
 		std::cout<<green<<"agent pos path  is "<<std::endl;
