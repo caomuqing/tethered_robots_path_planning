@@ -25,13 +25,13 @@ typedef neptimers::Timer MyTimer;
 ros::Publisher positions_pub_;
 std::vector<ros::Publisher> cmd_pub_vec_;
 
-Vector2d grid_pos_origin_(0.0, 0.0);
-Vector2d grid_size_(1.0, 1.0);
+Vector2d grid_pos_origin_(-4.0, -4.0);
+Vector2d grid_size_(2.0, 2.0);
 double max_vel_along_grid_ = 1.0; //this refer to the actual geometric unit, not grid unit
 double max_acc_along_grid_ = 1.0;
 std::unique_ptr<perm_grid_search> perm_search_;
 std::vector<Eigen::Matrix<int, 2, Dynamic>> pos_path_;
-int number_of_agents_ = 8;
+int number_of_agents_ = 5;
 Eigen::Matrix<double, Dynamic, 3> agent_pos_, agent_pos_prev_;
 Eigen::Matrix<double, 2, Dynamic> agent_pos_proj_, agent_pos_proj_prev_;
 MatrixXi agent_interaction_;
@@ -65,13 +65,21 @@ class Listener
 private:
     int agent_id;
 public:
+  Listener(int id)
+  {
+    agent_id = id;
+  }
   void odomCB(const nav_msgs::Odometry::ConstPtr& msg);
   void setId(int id)
   {
   	agent_id = id;
   }
-
+  int getId()
+  {
+    return agent_id;
+  }
 };
+std::vector<Listener> idListener_;
 
 template <typename T>
 std::vector<size_t> sort_indexes(const std::vector<T> &v) {

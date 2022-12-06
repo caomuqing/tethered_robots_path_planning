@@ -29,14 +29,18 @@ int main(int argc, char **argv)
   std::vector<ros::Subscriber> sub_odom_vector_;
   for (int i = 0; i < number_of_agents_; ++i)
   {
+    Listener idListener(i);
+    idListener_.push_back(idListener);
+  }
+
+    for (int i = 0; i < number_of_agents_; ++i)
+  {
     agent_pos_(i,0) = -999.0;
     agent_pos_prev_(i,0) = -999.0;
 
-    Listener idListener;
-    idListener.setId(i);
     ros::Subscriber sub_odom_ = nh1.subscribe<nav_msgs::Odometry>
-                                    ("/firefly"+std::to_string(i+1)+"/ground_truth/odometry", 
-                                      1, &Listener::odomCB, &idListener);
+                                    ("/firefly"+std::to_string(i+1)+"/unity/odom", 
+                                      1, &Listener::odomCB, &idListener_[i]);
     ros::Publisher cmd_pub = nh1.advertise<trajectory_msgs::MultiDOFJointTrajectory>
                               ("/firefly"+std::to_string(i+1)+"/command/trajectory", 1);
     sub_odom_vector_.push_back(sub_odom_);
@@ -47,7 +51,7 @@ int main(int argc, char **argv)
   }
 
   ros::Timer SetpointpubCBTimer = nh2.createTimer(ros::Duration(0.1), SetpointpubCB);  
-  ros::Subscriber goal_sub = nh3.subscribe<std_msgs::Float32MultiArray>("goal", 
+  ros::Subscriber goal_sub = nh3.subscribe<std_msgs::Float32MultiArray>("goals", 
                               1, GoalCallback);
 
   ros::AsyncSpinner spinner1(1, &custom_queue1);  // 1 thread for the custom_queue1 // 0 means threads= # of CPU cores
@@ -110,15 +114,14 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
 
 void Listener::odomCB(const nav_msgs::Odometry::ConstPtr& msg)
 {
-  if (timer_getting_odoms_[agent_id].ElapsedMs() < 100.0)
-    return;
-  agent_pos_prev_.row(agent_id) = agent_pos_.row(agent_id);
-  agent_pos_(agent_id,0) = msg->pose.pose.position.x;
-  agent_pos_(agent_id,1) = msg->pose.pose.position.y;
-  agent_pos_(agent_id,2) = msg->pose.pose.position.z;
+  // if (timer_getting_odoms_[agent_id].ElapsedMs() < 100.0)
+  //   return;
+  agent_pos_prev_.row(getId()) = agent_pos_.row(getId());
+  agent_pos_(getId(),0) = msg->pose.pose.position.x;
+  agent_pos_(getId(),1) = msg->pose.pose.position.y;
+  agent_pos_(getId(),2) = msg->pose.pose.position.z;
 
-
-  timer_getting_odoms_[agent_id].Reset();
+  // timer_getting_odoms_[agent_id].Reset();
 
 }
 
@@ -164,11 +167,15 @@ void SetpointpubCB(const ros::TimerEvent& e)
       }
     }
     getAgentPerm(agent_pos_proj_, agent_perm_);
+    // std::cout<<"current agent positions in projected:"<<std::endl;
+    // std::cout<<agent_pos_proj_<<std::endl;
+    // std::cout<<"current agent perm"<<std::endl;
+    // std::cout<<agent_perm_<<std::endl;
     update_timer_.Reset();
   }
 
   MatrixXd agents_cmd_pva = MatrixXd::Zero(number_of_agents_, 9);
-  MatrixXd projection_matrix;
+  MatrixXd projection_matrix(2,2);
   projection_matrix << proj_vector_0_, proj_vector_90_;
 
   if (!publishing_setpoint_) //publish initial positions
@@ -197,8 +204,16 @@ void SetpointpubCB(const ros::TimerEvent& e)
                     transpose()*grid_size_).norm()/max_vel_along_grid_;
       if (time_elapsed>time_for_this_seg)
       {
-        time_elapsed -= time_for_this_seg;
-        continue;
+        if (i!=pos_path_.size()-2)
+        {
+          time_elapsed -= time_for_this_seg;
+          continue;
+        }
+        else
+        {
+          time_elapsed = time_for_this_seg;
+        }
+
       }
 
       MatrixXd grid_pos = pos_path_[i].cast<double>() + 
@@ -257,7 +272,10 @@ void getProjectionPlane()
       theta = theta + 5.0/180.0 * 3.1415927;
     }
   }
-
+  std::cout<<red<<"projection plane 0 is "<< std::endl;
+  std::cout<<red<<proj_vector_0_<< std::endl;
+  std::cout<<red<<"projection plane 90 is "<< std::endl;
+  std::cout<<red<<proj_vector_90_<< std::endl;
   agent_pos_proj_ = agent_pos_projected;
   agent_pos_proj_prev_ = agent_pos_projected;
 
