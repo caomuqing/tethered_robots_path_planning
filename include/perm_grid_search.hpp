@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <queue>
 #include <tuple>
+#include <vector3d.hpp>
 
 typedef struct Node Node;  // needed to be able to have a pointer inside the struct
 
@@ -28,6 +29,7 @@ struct Node
   Eigen::Matrix<int, 2, Eigen::Dynamic> perm; 
   Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> interaction;
   Eigen::Matrix<int, 2, Eigen::Dynamic> agent_positions;
+  vector4d<std::vector<Eigen::Vector2i>> interact_3d;
 
 };
 
@@ -114,7 +116,8 @@ public:
   void setBias(double bias);
 
   bool run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,  
-           Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& interaction, int& status);
+           Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& interaction, 
+           vector4d<std::vector<Eigen::Vector2i>>& interact_3d, int& status);
 
   bool runonce(std::vector<Eigen::Vector3d>& tmp_path, int &status);
 
@@ -148,7 +151,7 @@ public:
   void getPermPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
   void getPosPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
   void getRuntime(double& runtime_this_round, double& time_spent_contact_pt, int& node_used_num);
-
+  bool check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Vector2i to_add);
 protected:
 private:
 

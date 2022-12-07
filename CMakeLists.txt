@@ -74,10 +74,18 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
 )
 
+add_library(entangle_check STATIC src/entangle_check.cpp)
+target_include_directories (entangle_check PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(entangle_check PUBLIC ${catkin_LIBRARIES})
+
+add_library(perm_grid_search STATIC src/perm_grid_search.cpp)
+target_include_directories (perm_grid_search PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(perm_grid_search PUBLIC ${catkin_LIBRARIES} entangle_check)
+
 add_executable(perm_search_node src/perm_grid_ros.cpp src/perm_grid_search.cpp)
 add_dependencies(perm_search_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(perm_search_node ${catkin_LIBRARIES})
 
-add_executable(planning_ros_node src/planning_ros.cpp src/perm_grid_search.cpp)
+add_executable(planning_ros_node src/planning_ros.cpp src/perm_grid_search.cpp src/entangle_check.cpp)
 add_dependencies(planning_ros_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(planning_ros_node ${catkin_LIBRARIES})

@@ -25,7 +25,8 @@ int main(int argc, char **argv)
   agent_pos_prev_ = MatrixXd::Zero(number_of_agents_, 3);
   agent_perm_ = MatrixXi::Zero(2, number_of_agents_);
   agent_interaction_ = Eigen::MatrixXi::Zero(number_of_agents_, number_of_agents_);
-
+  agent_interact_3d_ = vector4d<std::vector<Eigen::Vector2i>>(2, number_of_agents_, 
+                                  number_of_agents_, number_of_agents_);
   std::vector<ros::Subscriber> sub_odom_vector_;
   for (int i = 0; i < number_of_agents_; ++i)
   {
@@ -101,7 +102,7 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
 
   perm_search_ ->setGoal(goal_perm);   
   int search_status = 0;
-  perm_search_ ->run(agent_perm_, agent_interaction_, search_status);
+  perm_search_ ->run(agent_perm_, agent_interaction_, agent_interact_3d_, search_status);
   
   if (search_status ==1)
   {
@@ -201,6 +202,25 @@ void SetpointpubCB(const ros::TimerEvent& e)
                   infront_or_behind;
               }          
             }
+
+            for (int k = 0; k < number_of_agents_; ++k) //update interaction among 3 robots
+            {
+              if (k==agent_current ||k==agent_to_exchange) continue;
+              Vector2i to_add;
+              if (agent_pos_proj_(dim, k)<agent_pos_proj_(dim, agent_current))
+              {
+                to_add << 2, infront_or_behind;
+              }
+              else 
+              {
+                to_add << 1, infront_or_behind;
+              }
+              std::vector<int> agents_id {k, agent_current, agent_to_exchange};
+              std::sort(agents_id.begin(), agents_id.end());
+              perm_search_->check3robotEnt(agent_interact_3d_(dim,
+                              agents_id[0], agents_id[1], agents_id[2]), to_add);
+
+            }            
           }          
         }    
       }
@@ -213,7 +233,7 @@ void SetpointpubCB(const ros::TimerEvent& e)
     update_timer_.Reset();
   }
 
-  MatrixXd agents_cmd_pva = MatrixXd::Zero(number_of_agents_, 9);
+  MatrixXd agents_cmd_pva = MatrixXd::Zero(number_of_agents_, 9); //publish commands
   MatrixXd projection_matrix(2,2);
   projection_matrix << proj_vector_0_, proj_vector_90_;
 

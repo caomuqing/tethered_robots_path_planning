@@ -8,6 +8,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <rviz_visual_tools/rviz_visual_tools.h>
 #include "termcolor.hpp"
+#include <vector3d.hpp>
 
 using namespace termcolor;
 using namespace Eigen;
@@ -25,6 +26,7 @@ int number_of_agents_ = 8;
 Eigen::Matrix<double, Dynamic, 3> agent_pos_;
 MyTimer setpoint_timer_;
 bool publishing_setpoint_ = false;
+vector4d<std::vector<Eigen::Vector2i>> interact_3d;
 
 void SetpointpubCB(const ros::TimerEvent& e);
 std_msgs::ColorRGBA getColorJetInt(int id, int min, int max);
@@ -50,9 +52,11 @@ int main(int argc, char *argv[]) {
 	}			
 
 	Eigen::MatrixXi start_interaction = Eigen::MatrixXi::Zero(number_of_agents_, number_of_agents_);
+	interact_3d = vector4d<std::vector<Eigen::Vector2i>>(2, number_of_agents_, 
+	                                  number_of_agents_, number_of_agents_);	
 	perm_search_ ->setGoal(goal_perm);
 	int search_status = 0;
-	perm_search_ ->run(start_perm, start_interaction, search_status);
+	perm_search_ ->run(start_perm, start_interaction, interact_3d, search_status);
 	
 	if (search_status ==1)
 	{

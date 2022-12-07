@@ -10,6 +10,7 @@
 #include "timer.hpp"
 #include "termcolor.hpp"
 #include "perm_grid_search.hpp"
+#include "entangle_check.hpp"
 
 using namespace termcolor;
 using namespace Eigen;
@@ -36,6 +37,9 @@ perm_grid_search::perm_grid_search(int num_agent)
     node_pool_[i]->perm = MatrixXi::Zero(2, number_of_agents_);
     node_pool_[i]->interaction = MatrixXi::Zero(number_of_agents_, number_of_agents_);
     node_pool_[i]->agent_positions = MatrixXi::Zero(2, number_of_agents_);
+    node_pool_[i]->interact_3d = vector4d<std::vector<Eigen::Vector2i>>(2, number_of_agents_, 
+                                  number_of_agents_, number_of_agents_);
+
   }  
   std::cout << bold << blue << "Setting Up permutation search! " << reset << std::endl;
 
@@ -201,7 +205,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
 {
   for (int j=0; j<number_of_agents_-1; j++)
   {
-    for (int i: {0, 1})
+    for (int dim: {0, 1})
     {
       if (node_used_num_ == node_num_max_-1)
       {
@@ -213,13 +217,14 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
       neighbor->perm = current->perm;
       neighbor->agent_positions = current->agent_positions;
       neighbor->interaction = current->interaction;        
-
-      int agent_current = current->perm(i, j);      
-      int agent_to_exchange = current->perm(i, j+1);
-      neighbor->perm(i, j) = agent_to_exchange;
-      neighbor->perm(i, j+1) = agent_current;         
-      neighbor->agent_positions(i, agent_current) += 1;
-      neighbor->agent_positions(i, agent_to_exchange) -= 1;    
+      neighbor->interact_3d = current->interact_3d; 
+      
+      int agent_current = current->perm(dim, j);      
+      int agent_to_exchange = current->perm(dim, j+1);
+      neighbor->perm(dim, j) = agent_to_exchange;
+      neighbor->perm(dim, j+1) = agent_current;         
+      neighbor->agent_positions(dim, agent_current) += 1;
+      neighbor->agent_positions(dim, agent_to_exchange) -= 1;    
 
       for (int k=0; k<number_of_agents_; k++) //get agent start positions
       {
@@ -233,10 +238,10 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
         }
       }
 
-      int infront_or_behind = (current->agent_positions(1-i, agent_current) 
-                              < current->agent_positions(1-i, agent_to_exchange))?1:-1;
+      int infront_or_behind = (current->agent_positions(1-dim, agent_current) 
+                              < current->agent_positions(1-dim, agent_to_exchange))?1:-1;
 
-      if (i==0) //first axis
+      if (dim==0) //first axis
       {
         // infront_or_behind = -infront_or_behind; //just to keep meaning consistent, 
                                                           //should not affect algorithm
@@ -270,6 +275,28 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
       {
         continue;
       }
+
+      bool satisfy_condition = true;
+      for (int i = 0; i < number_of_agents_; ++i)
+      {
+        if (i==agent_current ||i==agent_to_exchange) continue;
+        Vector2i to_add;
+        if (neighbor->agent_positions(dim, i)<neighbor->agent_positions(dim, agent_current))
+        {
+          to_add << 2, infront_or_behind;
+        }
+        else 
+        {
+          to_add << 1, infront_or_behind;
+        }
+        std::vector<int> agents_id {i, agent_current, agent_to_exchange};
+        std::sort(agents_id.begin(), agents_id.end());
+        satisfy_condition = check3robotEnt(neighbor->interact_3d(dim,
+                                agents_id[0], agents_id[1], agents_id[2]), to_add);
+        if (!satisfy_condition) break;
+
+      }
+      if (!satisfy_condition) continue;
       neighbor-> previous = current;
       neighbor->h = getH(neighbor); 
       neighbor->g = getG(neighbor);
@@ -459,7 +486,7 @@ void perm_grid_search::clearProcess()
 
 bool perm_grid_search::run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,  
                            Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& interaction, 
-                           int& status)
+                           vector4d<std::vector<Eigen::Vector2i>>& interact_3d, int& status)
 {
   std::cout << "[A*] Running..." << std::endl;
 
@@ -470,6 +497,7 @@ bool perm_grid_search::run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,
   startPtr->index = 0;
   startPtr->perm = start_perm;
   startPtr->interaction = interaction;
+  startPtr->interact_3d = interact_3d;
   startPtr-> g =0.0;
   fromPermToPositions(start_perm, startPtr->agent_positions);
   // for (int i=0; i<number_of_agents_; i++) //get agent start positions
@@ -625,4 +653,43 @@ void perm_grid_search::fromPermToPositions(Eigen::Matrix<int, 2, Eigen::Dynamic>
     }
   }
 
+}
+
+bool perm_grid_search::check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Vector2i to_add)
+{
+  if (v.empty())
+  {
+    v.push_back(to_add);
+    return true;
+  }
+
+  if (v.back()(0)==to_add(0) && v.back()(1)!=to_add(1)) //cancellation
+  {
+    v.pop_back();
+    return true;
+  }
+  v.push_back(to_add);
+  if (v.size()==4)
+  {
+    if (v[0](1)==v[1](1)==v[2](1)) //same sign
+    {
+      if (v[1](1) != v[3](1))  //this may be always true
+      {
+        v.erase(v.begin());
+        v.pop_back();
+        return true;
+      }
+    }
+    else if (v[1](1)==v[2](1)==v[3](1))
+    {
+      if (v[0](1) != v[2](1)) //this may be always true
+      {
+        v.erase(v.begin());
+        v.pop_back();
+        return true;
+      }      
+    }
+    return false;
+  }
+  return true;
 }

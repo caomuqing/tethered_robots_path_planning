@@ -13,10 +13,10 @@
 #include "termcolor.hpp"
 #include <nav_msgs/Odometry.h>
 #include <boost/bind.hpp>
-#include <numeric>      // std::iota
-#include <algorithm>    // std::sort, std::stable_sort
 #include <std_msgs/Float32MultiArray.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
+#include <vector3d.hpp>
+#include "entangle_check.hpp"
 
 using namespace termcolor;
 using namespace Eigen;
@@ -47,6 +47,7 @@ double tolerance_init_distance_ = 0.5;
 Vector2d proj_vector_0_;
 Vector2d proj_vector_90_;
 Eigen::Matrix<int, 2, Dynamic> agent_perm_;
+vector4d<std::vector<Eigen::Vector2i>> agent_interact_3d_;
 
 void SetpointpubCB(const ros::TimerEvent& e);
 void odomCB(const nav_msgs::Odometry msg, int id);
