@@ -158,11 +158,50 @@ void SetpointpubCB(const ros::TimerEvent& e)
       {
         for (int j = i+1; j < number_of_agents_; ++j)
         {
-          if ((agent_pos_proj_(0, i)-agent_pos_proj_(0, j))*
-            (agent_pos_proj_prev_(0, i)-agent_pos_proj_prev_(0, j))<0) //there is intersection
+          if ((agent_pos_proj_(dim, i)-agent_pos_proj_(dim, j))*
+            (agent_pos_proj_prev_(dim, i)-agent_pos_proj_prev_(dim, j))<0) //there is intersection
           {
-            //update interaction
-          }
+            int agent_current, agent_to_exchange;
+            if (agent_pos_proj_(dim, i)<agent_pos_proj_(dim, j))
+            {
+              agent_current = j;
+              agent_to_exchange = i;
+            }
+            else
+            {
+              agent_current = i;
+              agent_to_exchange = j;
+            }
+            int infront_or_behind = (agent_pos_proj_(1-dim, agent_current) 
+                                    < agent_pos_proj_(1-dim, agent_to_exchange))?1:-1;
+
+            if (dim==0) //first axis
+            {
+              if (agent_current< agent_to_exchange) //only keeping the upper diagonal 
+              {
+                agent_interaction_(agent_current, agent_to_exchange) += 
+                  infront_or_behind;
+              }
+              else
+              {
+                agent_interaction_(agent_to_exchange, agent_current) += 
+                  infront_or_behind;
+              }        
+            }
+            else //second axis
+            {
+              if (agent_current< agent_to_exchange) //LOWER diagonal
+              {
+                agent_interaction_(agent_to_exchange, agent_current) += 
+                  infront_or_behind;
+              }
+              else
+              {
+                agent_interaction_(agent_current, agent_to_exchange) += 
+                  infront_or_behind;
+              }          
+            }
+          }          
         }    
       }
     }

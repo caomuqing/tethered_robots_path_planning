@@ -138,6 +138,8 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
     // std::cout <<bold<<green<< tmp->perm << std::endl;
     std::cout <<bold<<green<< "feasible agent positions path is" << std::endl;
     std::cout <<bold<<green<< tmp->agent_positions << std::endl;    
+    std::cout <<bold<<green<< "feasible agent interaction is" << std::endl;
+    std::cout <<bold<<green<< tmp->interaction << std::endl;     
     perm_path.push_back(tmp->perm);
     pos_path.push_back(tmp->agent_positions);
     tmp = tmp->previous;
@@ -263,6 +265,11 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
         }          
       }
 
+      if (abs(neighbor->interaction(agent_current, agent_to_exchange))>=2 || //does not satisfy condition
+        abs(neighbor->interaction(agent_to_exchange, agent_current))>=2)
+      {
+        continue;
+      }
       neighbor-> previous = current;
       neighbor->h = getH(neighbor); 
       neighbor->g = getG(neighbor);

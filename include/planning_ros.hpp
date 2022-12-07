@@ -27,7 +27,7 @@ std::vector<ros::Publisher> cmd_pub_vec_;
 
 Vector2d grid_pos_origin_(-4.0, -4.0);
 Vector2d grid_size_(2.0, 2.0);
-double max_vel_along_grid_ = 1.0; //this refer to the actual geometric unit, not grid unit
+double max_vel_along_grid_ = 2.0; //this refer to the actual geometric unit, not grid unit
 double max_acc_along_grid_ = 1.0;
 std::unique_ptr<perm_grid_search> perm_search_;
 std::vector<Eigen::Matrix<int, 2, Dynamic>> pos_path_;
