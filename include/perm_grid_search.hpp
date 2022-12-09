@@ -176,9 +176,9 @@ private:
   double bias_ = 1.5;  // page 34 of https://www.cs.cmu.edu/~motionplanning/lecture/Asearch_v8.pdf
 
   int number_of_agents_ = 1;
-  double max_runtime_ = 30.5;  //[s]
+  double max_runtime_ = 100.5;  //[s]
   int node_used_num_ = 0;
-  int node_num_max_ = 400000;
+  int node_num_max_ = 100000;
   NodeHashTable expanded_nodes_;
   NodeHashTable generated_nodes_;
   NodePtr initialnode_;

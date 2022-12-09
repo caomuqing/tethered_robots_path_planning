@@ -300,14 +300,54 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
       neighbor-> previous = current;
       neighbor->h = getH(neighbor); 
       neighbor->g = getG(neighbor);
-      MatrixXi idx(3, number_of_agents_);
-      idx << neighbor->perm, neighbor->interaction.row(0);
+      MatrixXi idx(number_of_agents_+2, number_of_agents_);
+      idx << neighbor->perm, neighbor->interaction;
 
       NodePtr nodeptr;
       nodeptr = generated_nodes_.find(idx);
 
       if (nodeptr != NULL) //same node has been added to open list before
       {
+
+        if (neighbor->interaction == nodeptr->interaction)
+        {
+          for (int dim :{0,1})
+          {
+            for (int i = 0; i < number_of_agents_; ++i)
+            {
+              for (int j = 0; j < number_of_agents_; ++j)
+              {
+                for (int k = 0; k < number_of_agents_; ++k)
+                {
+                  if (nodeptr->interact_3d(dim, i, j, k)!=neighbor->interact_3d(dim, i, j, k))
+                  {
+                    std::cout<<red<<"found such case!!"<<std::endl;
+                    std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;    
+                    std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
+                    for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
+                    {
+                        std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
+
+                    }                
+                    std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
+                    for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
+                    {
+                        std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
+
+                    } 
+                    exit(-1);
+                    exit(-1);
+                    exit(-1);
+                  }
+                }
+              }
+
+            }
+          }
+
+          std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
+        }
+
         if (nodeptr->state == 1) //in open list
         {
           //update the node if the new one is better
@@ -322,13 +362,13 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
         else //already expanded, in closed list
         {
           continue;
-        }
+        }        
       }
       else generated_nodes_.insert(idx, neighbor); //node generated yet
 
       neighbor-> state = 1;
       openList_.push(neighbor);
-      std::cout << red << "pushing into open list!" <<reset << std::endl;      
+      // std::cout << red << "pushing into open list!" <<reset << std::endl;      
       node_used_num_ += 1;   
       // std::cout<<" "<<node_used_num_<<" ";
 
@@ -418,7 +458,8 @@ void perm_grid_search::expandAndAddToQueue(NodePtr current)
                                       // it is a standard node (not intermediate)
       {
         MatrixXi idx(3, number_of_agents_);
-        idx << neighbor->perm, neighbor->interaction.row(0);
+        idx << neighbor->perm, neighbor->interaction.row(0), neighbor->interaction.row(1),
+               neighbor->interaction.row(2);
 
         NodePtr nodeptr;
         nodeptr = generated_nodes_.find(idx);
@@ -688,6 +729,15 @@ bool perm_grid_search::check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Ve
         v.pop_back();
         return true;
       }      
+    }
+    else if (v[0](1)==v[1](1) && v[2](1)==v[3](1) && v[1](1) != v[2](1))
+    {
+        v.pop_back();
+        v.pop_back();
+        v[0](1) = v[0](1) * (int)(-1); //reverse sign
+        v[0](0) = (v[0](0)==2? 1 :2); //reverse braid incex
+        v[1](0) = (v[1](0)==2? 1 :2);  
+        return true;  
     }
     return false;
   }

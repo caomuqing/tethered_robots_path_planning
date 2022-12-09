@@ -23,6 +23,9 @@ int main(int argc, char **argv)
 
   agent_pos_ = MatrixXd::Zero(number_of_agents_, 3);
   agent_pos_prev_ = MatrixXd::Zero(number_of_agents_, 3);
+  agent_target_ = MatrixXd::Zero(number_of_agents_, 3);
+  agent_start_ = MatrixXd::Zero(number_of_agents_, 3);
+  agent_start_on_grid_ = MatrixXd::Zero(number_of_agents_, 3);
   agent_perm_ = MatrixXi::Zero(2, number_of_agents_);
   agent_interaction_ = Eigen::MatrixXi::Zero(number_of_agents_, number_of_agents_);
   agent_interact_3d_ = vector4d<std::vector<Eigen::Vector2i>>(2, number_of_agents_, 
@@ -84,19 +87,32 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
   Eigen::Matrix<double, 2, Dynamic> goals_proj;
   goals_proj = MatrixXd::Zero(2, number_of_agents_);
 
-  std::vector<Eigen::Matrix<double, 3, 1>> EndPts;
   for (int i=0; i<number_of_agents_; i++)
   {
     Vector3d Endpt;
     Endpt(0) =  msg->data[i*3+0];
     Endpt(1) =  msg->data[i*3+1];
     Endpt(2) =  msg->data[i*3+2];
-    EndPts.push_back(Endpt);
+    agent_target_.row(i) = Endpt.transpose();
 
     goals_proj(0, i) = Endpt.head(2).dot(proj_vector_0_);
     goals_proj(1, i) = Endpt.head(2).dot(proj_vector_90_);
+    agent_start_on_grid_(i, 2) = Endpt(2);
   }  
 
+  agent_start_ = agent_pos_;
+  Eigen::Matrix<double, 2, Dynamic> agents_pos_grid = MatrixXd::Zero(2, number_of_agents_);
+  getAgentPosFromPerm(agents_pos_grid, agent_perm_);
+  agents_pos_grid.row(0) = agents_pos_grid.row(0) * grid_size_(0);
+  agents_pos_grid.row(1) = agents_pos_grid.row(1) * grid_size_(1);  
+  MatrixXd projection_matrix(2,2);
+  projection_matrix << proj_vector_0_, proj_vector_90_;    
+  Eigen::Matrix<double, 2, Dynamic> agents_pos = projection_matrix * agents_pos_grid;
+  agent_start_on_grid_.block(0,0,number_of_agents_,2) = 
+      (agents_pos.colwise()+grid_pos_origin_).transpose();
+
+  setpoint_timer_.Reset();  
+  planner_status_ = PlannerStatus::MOVING_START;
   Eigen::Matrix<int, 2, Dynamic> goal_perm = MatrixXi::Zero(2, number_of_agents_);  
   getAgentPerm(goals_proj, goal_perm); 
 
@@ -108,7 +124,6 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
   {
     pos_path_.clear();
     perm_search_->getPosPath(pos_path_);
-    setpoint_timer_.Reset();
     publishing_setpoint_ = true;
   }  
 }
@@ -237,26 +252,36 @@ void SetpointpubCB(const ros::TimerEvent& e)
   MatrixXd projection_matrix(2,2);
   projection_matrix << proj_vector_0_, proj_vector_90_;
 
-  if (!publishing_setpoint_) //publish initial positions
+  double time_elapsed = setpoint_timer_.ElapsedMs()/1000.0;  
+  if (planner_status_ == PlannerStatus::MOVING_START)
   {
-    Eigen::Matrix<double, 2, Dynamic> agents_pos_projected = MatrixXd::Zero(2, number_of_agents_);
-    getAgentPosFromPerm(agents_pos_projected, agent_perm_);
-    agents_pos_projected.row(0) = agents_pos_projected.row(0) * grid_size_(0);
-    agents_pos_projected.row(1) = agents_pos_projected.row(1) * grid_size_(1);    
-    Eigen::Matrix<double, 2, Dynamic> agents_pos = projection_matrix * agents_pos_projected;
+    MatrixXd diff = agent_start_on_grid_ - agent_start_ ;
+    MatrixXd time_needed = diff.rowwise().norm()/max_vel_along_grid_;
+    double time_max = time_needed.maxCoeff();
 
     for (int i = 0; i < number_of_agents_; ++i)
     {
-      agents_cmd_pva(i,0) = grid_pos_origin_(0)+agents_pos(0,i);
-      agents_cmd_pva(i,1) = grid_pos_origin_(1)+agents_pos(1,i);
-      agents_cmd_pva(i,2) = 2.0;
+      if (time_elapsed < time_needed(i))
+      {
+        agents_cmd_pva.block(i, 0, 1, 3)= 
+          agent_start_.row(i) + diff.row(i)/time_needed(i)*time_elapsed;
+      }
+      else
+      {
+        agents_cmd_pva.block(i, 0, 1, 3)= agent_start_on_grid_.row(i);
+      }
+    }
+
+    if ( time_elapsed > time_max && publishing_setpoint_)
+    {
+      planner_status_ = PlannerStatus::FOLLOWING_PLAN;
+      setpoint_timer_.Reset();
     }
   }
-  else
+  else if (planner_status_ == PlannerStatus::FOLLOWING_PLAN)
   {
-    double time_elapsed = setpoint_timer_.ElapsedMs()/1000.0;
     // std::cout<<green<<"time elapsed is "<<time_elapsed<<" s"<<std::endl;
-
+    bool finished = false;
     for (int i = 0; i < pos_path_.size()-1; ++i)
     {
       double time_for_this_seg = ((pos_path_[i+1]-pos_path_[i]).cast<double>().
@@ -271,8 +296,8 @@ void SetpointpubCB(const ros::TimerEvent& e)
         else
         {
           time_elapsed = time_for_this_seg;
+          finished = true;
         }
-
       }
 
       MatrixXd grid_pos = pos_path_[i].cast<double>() + 
@@ -285,13 +310,37 @@ void SetpointpubCB(const ros::TimerEvent& e)
       {
         agents_cmd_pva(i,0) = grid_pos_origin_(0)+agents_pos(0,i);
         agents_cmd_pva(i,1) = grid_pos_origin_(1)+agents_pos(1,i);
-        agents_cmd_pva(i,2) = 2.0;
+        agents_cmd_pva(i,2) = agent_target_(i,2);
       }
       break;
     }
-
+    if (finished)
+    {
+      agent_end_grid_ = agents_cmd_pva.block(0,0,number_of_agents_,3);
+      planner_status_ = PlannerStatus::MOVING_END;
+      setpoint_timer_.Reset();      
+      publishing_setpoint_ = false;
+    }
   }
+  else if (planner_status_ == PlannerStatus::MOVING_END)
+  {
+    MatrixXd diff = agent_target_ - agent_end_grid_ ;
+    MatrixXd time_needed = diff.rowwise().norm()/max_vel_along_grid_;
 
+    for (int i = 0; i < number_of_agents_; ++i)
+    {
+      if (time_elapsed < time_needed(i))
+      {
+        agents_cmd_pva.block(i, 0, 1, 3)= 
+          agent_end_grid_.row(i) + diff.row(i)/time_needed(i)*time_elapsed;
+      }
+      else
+      {
+        agents_cmd_pva.block(i, 0, 1, 3)= agent_target_.row(i);
+      }
+    }
+  }
+  if (planner_status_ != PlannerStatus::IDLE)
   publishTrajCmd(agents_cmd_pva);
 }
 

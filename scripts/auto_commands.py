@@ -138,22 +138,22 @@ class auto_commands:
         if not self.initialized and idx==0 and np.prod(self.gotten_odom) ==1:
             # xx = raw_input("type any to proceed: ");
             self.currentrun = self.currentrun+1
-            self.updateGoalsInitial();
+            self.updateGoalsRandom();
             self.publishgoals();
             self.initialized = True;
             return
             # print("INIT: current number of mission completed is "+str(self.currentrun-1))
         
         if not self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:3])-np.array(self.goals[idx][0:3]))<0.50:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.30:
             self.completed_current[idx] = 1;
-            # print("Robot "+str(idx)+" has completed current run !")
+            print("Robot "+str(idx)+" has completed current run !")
         elif self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:3])-np.array(self.goals[idx][0:3]))>0.50:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.30:
             self.completed_current[idx] = 0;
 
         if (self.initialized and np.prod(self.completed_current) == 1 and idx==0\
-        and self.mtlp_log_received) or (raw_input("type s to proceed: ")=="s"):
+            ):
             # xx = raw_input("type any to proceed: ");
             # if xx!="s":
             #     return;

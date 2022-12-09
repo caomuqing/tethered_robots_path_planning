@@ -25,6 +25,14 @@ typedef neptimers::Timer MyTimer;
 ros::Publisher positions_pub_;
 std::vector<ros::Publisher> cmd_pub_vec_;
 
+enum PlannerStatus
+{
+  IDLE = 0,
+  MOVING_START = 1,
+  FOLLOWING_PLAN = 2,
+  MOVING_END = 3
+};
+
 Vector2d grid_pos_origin_(-4.0, -4.0);
 Vector2d grid_size_(2.0, 2.0);
 double max_vel_along_grid_ = 2.0; //this refer to the actual geometric unit, not grid unit
@@ -32,7 +40,9 @@ double max_acc_along_grid_ = 1.0;
 std::unique_ptr<perm_grid_search> perm_search_;
 std::vector<Eigen::Matrix<int, 2, Dynamic>> pos_path_;
 int number_of_agents_ = 5;
-Eigen::Matrix<double, Dynamic, 3> agent_pos_, agent_pos_prev_;
+Eigen::Matrix<double, Dynamic, 3> agent_pos_, agent_pos_prev_, agent_target_, agent_start_;
+Eigen::Matrix<double, Dynamic, 3> agent_start_on_grid_, agent_end_grid_;
+
 Eigen::Matrix<double, 2, Dynamic> agent_pos_proj_, agent_pos_proj_prev_;
 MatrixXi agent_interaction_;
 
@@ -48,6 +58,8 @@ Vector2d proj_vector_0_;
 Vector2d proj_vector_90_;
 Eigen::Matrix<int, 2, Dynamic> agent_perm_;
 vector4d<std::vector<Eigen::Vector2i>> agent_interact_3d_;
+int planner_status_ = PlannerStatus::IDLE;
+
 
 void SetpointpubCB(const ros::TimerEvent& e);
 void odomCB(const nav_msgs::Odometry msg, int id);
