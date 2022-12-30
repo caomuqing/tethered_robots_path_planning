@@ -30,7 +30,7 @@ struct Node
   Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> interaction;
   Eigen::Matrix<int, 2, Eigen::Dynamic> agent_positions;
   vector4d<std::vector<Eigen::Vector2i>> interact_3d;
-
+  // e.g., in interact_3d, \sigma_1^1 is (1,1), \sigma_2^-1 is (2,-1)
 };
 
 typedef Node* NodePtr;
@@ -170,6 +170,9 @@ private:
   int getIdxNode(NodePtr node);
   void fromPermToPositions(Eigen::Matrix<int, 2, Eigen::Dynamic>& perm,
                             Eigen::Matrix<int, 2, Eigen::Dynamic>& positions);
+  void encode3dintoInteract(Eigen::MatrixXi& interaction, 
+  vector4d<std::vector<Eigen::Vector2i>>& interact_3d);
+  int encode3dSepcific(std::vector<Eigen::Vector2i>& braid);
 
   std::priority_queue<NodePtr, std::vector<NodePtr>, CompareCost> openList_;  //= OpenSet, = Q
   NodePtr best_node_ptr_ = NULL;

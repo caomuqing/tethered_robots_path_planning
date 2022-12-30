@@ -55,6 +55,284 @@ void perm_grid_search::setUp()
 
 }
 
+void perm_grid_search::encode3dintoInteract(MatrixXi& interaction, 
+  vector4d<std::vector<Eigen::Vector2i>>& interact_3d)
+{
+  for (auto dim: {0,1})
+  {
+    for (int i = 0; i < number_of_agents_; ++i)
+    {
+      interaction(i,i) = 0;
+      for (int j = i+1; j < number_of_agents_; ++j)
+      {
+        for (int k = j+1; k < number_of_agents_; ++k)
+        {
+          interaction(i,i) += dim*number_of_agents_*power_int(10,3) +
+            j*k *
+            encode3dSepcific(interact_3d(dim, i,j,k));
+        }
+      }
+    }
+  }
+}
+
+int perm_grid_search::encode3dSepcific( 
+  std::vector<Eigen::Vector2i>& braid)
+{
+  if (braid.size()==0)
+  {
+    return 0;
+  }
+  else if (braid.size()==1)
+  {
+    if (braid[0](0)==1)
+    {
+      if (braid[0](1)==1)
+      {
+        return 10;
+      }
+      else if (braid[0](1)==-1)
+      {
+        return 12;
+      }
+      else
+      {
+        std::cout<<"something wrong 001001!"<<std::endl;
+        exit(-1);
+      }      
+    }
+    else if (braid[0](0)==2)
+    {
+      if (braid[0](1)==1)
+      {
+        return 14;
+      }
+      else if (braid[0](1)==-1)
+      {
+        return 18;
+      }
+      else
+      {
+        std::cout<<"something wrong 001002!"<<std::endl;
+        exit(-1);
+      }      
+    }
+    else
+    {
+      std::cout<<"something wrong 001003!"<<std::endl;
+      exit(-1);
+    }
+  }
+  else if (braid.size()==2)
+  {
+
+    switch (braid[0](0)){
+    case 1: //12
+      switch (braid[0](1)){
+      case 1:
+        switch (braid[1](1)){ 
+        case 1: return 21;
+        break;
+        case -1: return 22;
+        break;
+        default:
+        std::cout<<"something wrong 002001!"<<std::endl;
+        exit(-1);  
+        }
+      break;
+      case -1:
+        switch (braid[1](1)){
+        case 1: return 23;
+        break;
+        case -1: return 24;
+        break;
+        default:
+        std::cout<<"something wrong 002002!"<<std::endl;
+        exit(-1);  
+        }
+      break;
+      default:
+        std::cout<<"something wrong 002003!"<<std::endl;
+        exit(-1);  
+      }
+    break;
+    case 2: //21
+    switch (braid[0](1)){
+      case 1:
+        switch (braid[1](1)){
+        case 1: return 25;
+        break;
+        case -1: return 26;
+        break;
+        default:
+        std::cout<<"something wrong 002004!"<<std::endl;
+        exit(-1);  
+        }
+      break;
+      case -1:
+        switch (braid[1](1)){
+        case 1: return 27;
+        break;
+        case -1: return 28;
+        break;
+        default:
+        std::cout<<"something wrong 002005!"<<std::endl;
+        exit(-1);  
+        }
+      break;
+      default:
+        std::cout<<"something wrong 002006!"<<std::endl;
+        exit(-1);  
+      }
+    break;
+    default:
+      std::cout<<"something wrong 002007!"<<std::endl;
+      exit(-1); 
+    }
+  }
+  else if (braid.size()==3)
+  {
+    switch (braid[0](0)){
+    case 1: //121
+      switch (braid[0](1)){
+      case 1:
+        switch (braid[1](1)){ 
+        case 1: 
+          switch (braid[2](1)){   
+            case 1: return 31; //121
+            break;
+            case -1: return 32; //121^-1
+            break;
+            default:
+            std::cout<<"something wrong 003001!"<<std::endl;
+            exit(-1); 
+          }      
+        break;
+        case -1: 
+          switch (braid[2](1)){   
+            case 1: return 37; //12^-1 1
+            break;
+            case -1: return 33; //12^-1 1^-1
+            break;
+            default:
+            std::cout<<"something wrong 003002!"<<std::endl;
+            exit(-1); 
+          }         
+        break;
+        default:
+        std::cout<<"something wrong 003003!"<<std::endl;
+        exit(-1);  
+        }
+      break;
+      case -1:
+        switch (braid[1](1)){
+        case 1: 
+          switch (braid[2](1)){   
+            case 1: return 36; //1^-1 2 1
+            break;
+            case -1: return 39; //1^-1 2 1^-1
+            break;
+            default:
+            std::cout<<"something wrong 003004!"<<std::endl;
+            exit(-1); 
+          }         
+        break;
+        case -1: 
+          switch (braid[2](1)){   
+            case 1: return 35; //1^-1 2^-1 1
+            break;
+            case -1: return 34; //1^-1 2^-1 1^-1
+            break;
+            default:
+            std::cout<<"something wrong 003005!"<<std::endl;
+            exit(-1); 
+          }         
+        break;
+        default:
+        std::cout<<"something wrong 003006!"<<std::endl;
+        exit(-1);  
+        }
+      break;
+      default:
+        std::cout<<"something wrong 003007!"<<std::endl;
+        exit(-1);  
+      }
+    break;
+    case 2: //212
+    switch (braid[0](1)){
+      case 1:
+        switch (braid[1](1)){
+        case 1: 
+          switch (braid[2](1)){   
+            case 1: return 31; //212
+            break;
+            case -1: return 36; //212^-1
+            break;
+            default:
+            std::cout<<"something wrong 003008!"<<std::endl;
+            exit(-1); 
+          }         
+        break;
+        case -1: 
+          switch (braid[2](1)){   
+            case 1: return 38; //21^-1 2
+            break;
+            case -1: return 35; //21^-1 2^-1
+            break;
+            default:
+            std::cout<<"something wrong 003009!"<<std::endl;
+            exit(-1); 
+          }         
+        break;
+        default:
+        std::cout<<"something wrong 003000!"<<std::endl;
+        exit(-1);  
+        }
+      break;
+      case -1:
+        switch (braid[1](1)){
+        case 1: 
+          switch (braid[2](1)){   
+            case 1: return 32; //2^-1 1 2
+            break;
+            case -1: return 30; //2^-1 1 2^-1
+            break;
+            default:
+            std::cout<<"something wrong 0030011!"<<std::endl;
+            exit(-1); 
+          }         
+        break;
+        case -1: 
+          switch (braid[2](1)){   
+            case 1: return 33; //2^-1 1^-1 2
+            break;
+            case -1: return 34; //2^-1 1^-1 2^-1
+            break;
+            default:
+            std::cout<<"something wrong 0030012!"<<std::endl;
+            exit(-1); 
+          }         
+        break;
+        default:
+        std::cout<<"something wrong 0030013!"<<std::endl;
+        exit(-1);  
+        }
+      break;
+      default:
+        std::cout<<"something wrong 0030014!"<<std::endl;
+        exit(-1);  
+      }
+    break;
+    default:
+      std::cout<<"something wrong 0030015!"<<std::endl;
+      exit(-1); 
+    }
+  }
+  std::cout<<"something wrong 005001!"<<std::endl;
+  exit(-1);  
+  return -1;
+}
+
 int perm_grid_search::getIdxNode(NodePtr node)
 {
   int idx = 0;
@@ -294,9 +572,44 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
         satisfy_condition = check3robotEnt(neighbor->interact_3d(dim,
                                 agents_id[0], agents_id[1], agents_id[2]), to_add);
         if (!satisfy_condition) break;
+        if (neighbor->interact_3d(dim,agents_id[0], agents_id[1], agents_id[2]).size()==3)
+        {
+          if (neighbor->interact_3d(dim,agents_id[0], agents_id[1], agents_id[2])[0]==
+            neighbor->interact_3d(dim,agents_id[0], agents_id[1], agents_id[2])[1] ||
+            neighbor->interact_3d(dim,agents_id[0], agents_id[1], agents_id[2])[1]==
+            neighbor->interact_3d(dim,agents_id[0], agents_id[1], agents_id[2])[2])
+          {
+            std::cout<<red<<"strange 101!!"<<std::endl;
+
+            std::cout<<red<<"id0 : "<<agents_id[0]<<" id1 : "<<agents_id[1]<<" id2: "<<agents_id[2]<<std::endl; 
+            std::cout<<red<<"dim : "<<dim<<"agent : "<<agent_current<<"agent_to_exchange: "<<agent_to_exchange<<std::endl; 
+
+
+            NodePtr tmp = neighbor;
+
+            while (tmp != NULL)
+            {
+              std::cout<<red<<"================================================"<<std::endl;          
+
+              std::cout<<red<<"perms:"<<std::endl<<tmp->perm.row(dim)<<std::endl;          
+              std::cout<<red<<"the other dim perms:"<<std::endl<<tmp->perm.row(1-dim)<<std::endl;          
+               std::cout<<red<<"interaction:"<<std::endl<<tmp->interaction<<std::endl;   
+              for (int ii = 0; ii < 
+                tmp->interact_3d(dim,agents_id[0], agents_id[1], agents_id[2]).size(); ++ii)
+              {
+                  std::cout<<red<<tmp->interact_3d(dim,agents_id[0], agents_id[1], agents_id[2])[ii]<<std::endl;
+
+              }   
+              tmp = tmp->previous;
+            }                  
+            exit(-1);
+          }
+
+        }
 
       }
       if (!satisfy_condition) continue;
+      encode3dintoInteract(neighbor->interaction, neighbor->interact_3d);
       neighbor-> previous = current;
       neighbor->h = getH(neighbor); 
       neighbor->g = getG(neighbor);
@@ -315,14 +628,15 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
           {
             for (int i = 0; i < number_of_agents_; ++i)
             {
-              for (int j = 0; j < number_of_agents_; ++j)
+              for (int j = i+1; j < number_of_agents_; ++j)
               {
-                for (int k = 0; k < number_of_agents_; ++k)
+                for (int k = j+1; k < number_of_agents_; ++k)
                 {
                   if (nodeptr->interact_3d(dim, i, j, k)!=neighbor->interact_3d(dim, i, j, k))
                   {
                     std::cout<<red<<"found such case!!"<<std::endl;
-                    std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;    
+                    std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
+                    std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
                     std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
                     for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
                     {
@@ -335,9 +649,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
                         std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
                     } 
-                    exit(-1);
-                    exit(-1);
-                    exit(-1);
+                    // exit(-1);
                   }
                 }
               }
@@ -345,7 +657,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
             }
           }
 
-          std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
+          // std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
         }
 
         if (nodeptr->state == 1) //in open list
@@ -712,7 +1024,7 @@ bool perm_grid_search::check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Ve
   v.push_back(to_add);
   if (v.size()==4)
   {
-    if (v[0](1)==v[1](1)==v[2](1)) //same sign
+    if (v[0](1)==v[1](1) && v[1](1)==v[2](1)) //same sign
     {
       if (v[1](1) != v[3](1))  //this may be always true
       {
@@ -721,7 +1033,7 @@ bool perm_grid_search::check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Ve
         return true;
       }
     }
-    else if (v[1](1)==v[2](1)==v[3](1))
+    else if (v[1](1)==v[2](1) && v[2](1)==v[3](1))
     {
       if (v[0](1) != v[2](1)) //this may be always true
       {
