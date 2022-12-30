@@ -17,7 +17,7 @@ import random
 import numpy as np
 from numpy import linalg as LA
 
-number_of_robots = 5;
+number_of_robots = 8;
 x_min = -10.0;
 x_max = 10.0;
 y_min = -10.0;

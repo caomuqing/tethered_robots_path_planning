@@ -33,13 +33,13 @@ enum PlannerStatus
   MOVING_END = 3
 };
 
-Vector2d grid_pos_origin_(-4.0, -4.0);
+Vector2d grid_pos_origin_(-8.0, -8.0);
 Vector2d grid_size_(2.0, 2.0);
 double max_vel_along_grid_ = 2.0; //this refer to the actual geometric unit, not grid unit
 double max_acc_along_grid_ = 1.0;
 std::unique_ptr<perm_grid_search> perm_search_;
 std::vector<Eigen::Matrix<int, 2, Dynamic>> pos_path_;
-int number_of_agents_ = 5;
+int number_of_agents_ = 8;
 Eigen::Matrix<double, Dynamic, 3> agent_pos_, agent_pos_prev_, agent_target_, agent_start_;
 Eigen::Matrix<double, Dynamic, 3> agent_start_on_grid_, agent_end_grid_;
 

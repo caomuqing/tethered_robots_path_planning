@@ -181,7 +181,7 @@ private:
   int number_of_agents_ = 1;
   double max_runtime_ = 100.5;  //[s]
   int node_used_num_ = 0;
-  int node_num_max_ = 100000;
+  int node_num_max_ = 50000;
   NodeHashTable expanded_nodes_;
   NodeHashTable generated_nodes_;
   NodePtr initialnode_;

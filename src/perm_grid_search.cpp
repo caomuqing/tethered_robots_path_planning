@@ -26,6 +26,8 @@ typedef neptimers::ROSTimer MyROSTimer;
 
 perm_grid_search::perm_grid_search(int num_agent)
 {
+  std::cout << bold << blue << "Setting Up permutation search! " << reset << std::endl;
+
   number_of_agents_ = num_agent;
   node_num_max_ = node_num_max_< power_int(4, number_of_agents_+4)?node_num_max_:
                   power_int(4, number_of_agents_+4); 
@@ -41,7 +43,7 @@ perm_grid_search::perm_grid_search(int num_agent)
                                   number_of_agents_, number_of_agents_);
 
   }  
-  std::cout << bold << blue << "Setting Up permutation search! " << reset << std::endl;
+  std::cout << bold << blue << "Finish Setting Up permutation search! " << reset << std::endl;
 
   goalPos_ = MatrixXi::Zero(2, number_of_agents_);
 }
@@ -624,38 +626,38 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
 
         if (neighbor->interaction == nodeptr->interaction)
         {
-          for (int dim :{0,1})
-          {
-            for (int i = 0; i < number_of_agents_; ++i)
-            {
-              for (int j = i+1; j < number_of_agents_; ++j)
-              {
-                for (int k = j+1; k < number_of_agents_; ++k)
-                {
-                  if (nodeptr->interact_3d(dim, i, j, k)!=neighbor->interact_3d(dim, i, j, k))
-                  {
-                    std::cout<<red<<"found such case!!"<<std::endl;
-                    std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
-                    std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
-                    std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
-                    for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
-                    {
-                        std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
+          // for (int dim :{0,1})
+          // {
+          //   for (int i = 0; i < number_of_agents_; ++i)
+          //   {
+          //     for (int j = i+1; j < number_of_agents_; ++j)
+          //     {
+          //       for (int k = j+1; k < number_of_agents_; ++k)
+          //       {
+          //         if (nodeptr->interact_3d(dim, i, j, k)!=neighbor->interact_3d(dim, i, j, k))
+          //         {
+          //           std::cout<<red<<"found such case!!"<<std::endl;
+          //           std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
+          //           std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
+          //           std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
+          //           for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
+          //           {
+          //               std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
-                    }                
-                    std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
-                    for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
-                    {
-                        std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
+          //           }                
+          //           std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
+          //           for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
+          //           {
+          //               std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
-                    } 
-                    // exit(-1);
-                  }
-                }
-              }
+          //           } 
+          //           // exit(-1);
+          //         }
+          //       }
+          //     }
 
-            }
-          }
+          //   }
+          // }
 
           // std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
         }
