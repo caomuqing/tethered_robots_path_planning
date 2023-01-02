@@ -117,7 +117,7 @@ public:
 
   bool run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,  
            Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& interaction, 
-           vector4d<std::vector<Eigen::Vector2i>>& interact_3d, int& status);
+           vector4d<std::vector<Eigen::Vector2i>>& interact_3d, int& status, bool is_second_try=false);
 
   bool runonce(std::vector<Eigen::Vector3d>& tmp_path, int &status);
 
@@ -181,18 +181,19 @@ private:
   int number_of_agents_ = 1;
   double max_runtime_ = 100.5;  //[s]
   int node_used_num_ = 0;
-  int node_num_max_ = 50000;
+  int node_num_max_ = 70000;
   NodeHashTable expanded_nodes_;
   NodeHashTable generated_nodes_;
   NodePtr initialnode_;
   double runtime_this_round_;
   Eigen::Matrix<int, 2, Eigen::Dynamic> goalPerm_;
   Eigen::Matrix<int, 2, Eigen::Dynamic> goalPos_;
+  std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> pastGoalPos_;
 
   std::vector<NodePtr> node_pool_;
   std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> perm_path_;
   std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> pos_path_;
-
+  std::vector<int> list_of_agents_;
 };
 
 #endif

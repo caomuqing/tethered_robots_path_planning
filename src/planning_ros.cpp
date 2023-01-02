@@ -76,6 +76,7 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
   if (num_of_robot!=number_of_agents_)
   {
      ROS_WARN("Size of input message not consistent with the number of robots!");
+     ROS_WARN("num_of_robot is %d !", num_of_robot);
      return;
   }
   if (!found_projection_) 

@@ -46,6 +46,10 @@ perm_grid_search::perm_grid_search(int num_agent)
   std::cout << bold << blue << "Finish Setting Up permutation search! " << reset << std::endl;
 
   goalPos_ = MatrixXi::Zero(2, number_of_agents_);
+  for (int i = 0; i < number_of_agents_-1; ++i)
+  {
+    list_of_agents_.push_back(i);
+  }
 }
 
 perm_grid_search::~perm_grid_search()
@@ -189,6 +193,11 @@ int perm_grid_search::encode3dSepcific(
     break;
     default:
       std::cout<<"something wrong 002007!"<<std::endl;
+      for (int ii = 0; ii < braid.size(); ++ii)
+      {
+          std::cout<<red<<braid[ii]<<std::endl;
+
+      }        
       exit(-1); 
     }
   }
@@ -327,10 +336,20 @@ int perm_grid_search::encode3dSepcific(
     break;
     default:
       std::cout<<"something wrong 0030015!"<<std::endl;
+      for (int ii = 0; ii < braid.size(); ++ii)
+      {
+          std::cout<<red<<braid[ii]<<std::endl;
+
+      }        
       exit(-1); 
     }
   }
   std::cout<<"something wrong 005001!"<<std::endl;
+  for (int ii = 0; ii < braid.size(); ++ii)
+  {
+      std::cout<<red<<braid[ii]<<std::endl;
+
+  }    
   exit(-1);  
   return -1;
 }
@@ -419,11 +438,11 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
   while (tmp != NULL)
   {
     // std::cout <<bold<<green<< "feasible permutation path is" << std::endl;
-    // std::cout <<bold<<green<< tmp->perm << std::endl;
-    std::cout <<bold<<green<< "feasible agent positions path is" << std::endl;
-    std::cout <<bold<<green<< tmp->agent_positions << std::endl;    
-    std::cout <<bold<<green<< "feasible agent interaction is" << std::endl;
-    std::cout <<bold<<green<< tmp->interaction << std::endl;     
+    // // std::cout <<bold<<green<< tmp->perm << std::endl;
+    // std::cout <<bold<<green<< "feasible agent positions path is" << std::endl;
+    // std::cout <<bold<<green<< tmp->agent_positions << std::endl;    
+    // std::cout <<bold<<green<< "feasible agent interaction is" << std::endl;
+    // std::cout <<bold<<green<< tmp->interaction << std::endl;     
     perm_path.push_back(tmp->perm);
     pos_path.push_back(tmp->agent_positions);
     tmp = tmp->previous;
@@ -483,7 +502,7 @@ bool perm_grid_search::entanglesWithOtherAgents(NodePtr current, double& arc_len
 
 void perm_grid_search::expandAndAddToQueue2(NodePtr current)
 {
-  for (int j=0; j<number_of_agents_-1; j++)
+  for (auto j:list_of_agents_)
   {
     for (int dim: {0, 1})
     {
@@ -626,38 +645,39 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
 
         if (neighbor->interaction == nodeptr->interaction)
         {
-          // for (int dim :{0,1})
-          // {
-          //   for (int i = 0; i < number_of_agents_; ++i)
-          //   {
-          //     for (int j = i+1; j < number_of_agents_; ++j)
-          //     {
-          //       for (int k = j+1; k < number_of_agents_; ++k)
-          //       {
-          //         if (nodeptr->interact_3d(dim, i, j, k)!=neighbor->interact_3d(dim, i, j, k))
-          //         {
-          //           std::cout<<red<<"found such case!!"<<std::endl;
-          //           std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
-          //           std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
-          //           std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
-          //           for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
-          //           {
-          //               std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
+          for (int dim :{0,1})
+          {
+            for (int i = 0; i < number_of_agents_; ++i)
+            {
+              for (int j = i+1; j < number_of_agents_; ++j)
+              {
+                for (int k = j+1; k < number_of_agents_; ++k)
+                {
+                  if (encode3dSepcific(nodeptr->interact_3d(dim, i, j, k))!=
+                      encode3dSepcific(neighbor->interact_3d(dim, i, j, k)))
+                  {
+                    std::cout<<red<<"found such case!!"<<std::endl;
+                    std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
+                    std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
+                    std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
+                    for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
+                    {
+                        std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
-          //           }                
-          //           std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
-          //           for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
-          //           {
-          //               std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
+                    }                
+                    std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
+                    for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
+                    {
+                        std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
-          //           } 
-          //           // exit(-1);
-          //         }
-          //       }
-          //     }
+                    } 
+                    // exit(-1);
+                  }
+                }
+              }
 
-          //   }
-          // }
+            }
+          }
 
           // std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
         }
@@ -665,12 +685,13 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
         if (nodeptr->state == 1) //in open list
         {
           //update the node if the new one is better
-          // if (neighbor->g + bias_*neighbor->h < nodeptr->g + bias_*nodeptr->h)
-          // {
-          //   nodeptr->previous = current;
-          //   nodeptr->g = neighbor->g;
-          //   nodeptr->h = neighbor->h;
-          // }
+          if (neighbor->g + bias_*neighbor->h < nodeptr->g + bias_*nodeptr->h)
+          {
+            nodeptr->previous = current;
+            nodeptr->g = neighbor->g;
+            nodeptr->h = neighbor->h;
+            // std::cout<<blue<<"updating new parrent!!"<<std::endl;
+          }
           continue;
         }
         else //already expanded, in closed list
@@ -835,13 +856,13 @@ void perm_grid_search::clearProcess()
   node_used_num_ = 0;  
 
 
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 }
 
 
 bool perm_grid_search::run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,  
                            Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& interaction, 
-                           vector4d<std::vector<Eigen::Vector2i>>& interact_3d, int& status)
+                           vector4d<std::vector<Eigen::Vector2i>>& interact_3d, int& status,
+                           bool is_second_try)
 {
   std::cout << "[A*] Running..." << std::endl;
 
@@ -948,6 +969,43 @@ exitloop:
       std::cout <<bold<<red<< "[A*] RUN TIME REACHED!" << std::endl;
     }
     std::cout << "[A*] num of nodes expanded is " <<node_used_num_<<std::endl;
+
+    if (!is_second_try)
+    {
+      Eigen::Matrix<int, 2, Eigen::Dynamic> goalpos_tmp = goalPos_;
+      bool found_secondary_soln = false;
+      for (int i = pastGoalPos_.size()-2; i >= 0; --i)
+      {
+        std::cout <<green<< "==========[A*] start a new search round!!========= " <<std::endl;        
+        clearProcess();
+        goalPos_ = pastGoalPos_[i];
+        int res;
+        run(start_perm,  interaction, interact_3d, res, true);        
+        if (res == GOAL_REACHED) 
+        {
+          std::cout <<green<< "==========[A*] found itermediate goal, now try reaching the terminal goal!!========= " <<std::endl;    
+          std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> pos_path_inter = pos_path_;
+          goalPos_ = goalpos_tmp;
+          Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm_tmp = best_node_ptr_->perm;  
+          Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> interaction_tmp = best_node_ptr_->interaction; 
+          vector4d<std::vector<Eigen::Vector2i>> interact_3d_tmp = best_node_ptr_->interact_3d;
+          clearProcess();
+          int sta;
+          run(start_perm_tmp,  interaction_tmp, interact_3d_tmp, sta, true);
+          if (sta == GOAL_REACHED)
+          {
+            found_secondary_soln = true;
+            for (int ii = pos_path_inter.size()-1; ii >= 0; --ii) //recover the overall path
+            {
+              pos_path_.insert(pos_path_.begin(), pos_path_inter[ii]);
+            }
+            status = GOAL_REACHED;
+            return true;
+          }
+        }
+      }
+    }
+
     return false;
   }
   else
@@ -961,6 +1019,11 @@ exitloop:
   recoverPath(best_node_ptr);
   // recoverPwpOut(best_node_ptr);
   best_node_ptr_ = best_node_ptr;
+
+  if (!is_second_try)
+  {
+    pastGoalPos_.push_back(goalPos_);
+  }
 
   return true;
 }

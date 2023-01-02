@@ -17,7 +17,7 @@ import random
 import numpy as np
 from numpy import linalg as LA
 
-number_of_robots = 8;
+number_of_robots = 7;
 x_min = -10.0;
 x_max = 10.0;
 y_min = -10.0;
@@ -96,10 +96,10 @@ class auto_commands:
             # self.goals1[x][1] = -_radius*math.sin(one_slice*x + math.pi) - 0.5*math.sin(-1.571-one_slice*x);          
 
         self.goals = self.goals0
-        # self.seed_number = 19; #previous was 9
-        # np.random.seed(self.seed_number);
+        self.seed_number = 3; #seed no: outofmemory idx 2:9
+        np.random.seed(self.seed_number);
 
-        # random.seed(10);
+        random.seed(10);
         self.pose = Pose();
         self.round =1
         self.currentrun = 0
@@ -142,11 +142,11 @@ class auto_commands:
             # print("INIT: current number of mission completed is "+str(self.currentrun-1))
         
         if not self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.30:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.15:
             self.completed_current[idx] = 1;
             print("Robot "+str(idx)+" has completed current run !")
         elif self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.30:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.15:
             self.completed_current[idx] = 0;
 
         if (self.initialized and np.prod(self.completed_current) == 1 and idx==0\
@@ -213,7 +213,6 @@ class auto_commands:
 
             if self.currentrun<101:                  
                 self.pubGoal[i].publish(msg)
-                self.pubGoal_neptune2.publish(msg_neptune2);
                 self.mtlp_log_received = False
             else:
                 print("finishing 100 runs: num of failed runs is "+str(self.failingcase))
@@ -222,6 +221,7 @@ class auto_commands:
 
             self.dist_travelled[i] = 0.0;  
             self.completed_current[i] = 0;   
+        self.pubGoal_neptune2.publish(msg_neptune2);
         self.start_pub_time = rospy.Time.now();            
         print("current number of mission completed is "+str(self.currentrun-1))
 
