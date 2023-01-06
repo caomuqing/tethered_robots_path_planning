@@ -341,7 +341,16 @@ void SetpointpubCB(const ros::TimerEvent& e)
       }
     }
   }
-  if (planner_status_ != PlannerStatus::IDLE)
+  else if (planner_status_ == PlannerStatus::IDLE) //publish initial position with height
+  {
+    for (int i = 0; i < number_of_agents_; ++i)
+    {
+
+      agents_cmd_pva.block(i, 0, 1, 3) =  agent_pos_.row(i);
+      agents_cmd_pva(i,2) = 2.0;
+    }
+  }  
+  // if (planner_status_ != PlannerStatus::IDLE)
   publishTrajCmd(agents_cmd_pva);
 }
 
