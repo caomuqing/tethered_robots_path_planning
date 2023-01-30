@@ -350,7 +350,7 @@ int perm_grid_search::encode3dSepcific(
       std::cout<<red<<braid[ii]<<std::endl;
 
   }    
-  exit(-1);  
+  // exit(-1);  
   return -1;
 }
 
@@ -623,7 +623,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
               }   
               tmp = tmp->previous;
             }                  
-            exit(-1);
+            // exit(-1);
           }
 
         }
@@ -643,44 +643,44 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
       if (nodeptr != NULL) //same node has been added to open list before
       {
 
-        if (neighbor->interaction == nodeptr->interaction)
-        {
-          for (int dim :{0,1})
-          {
-            for (int i = 0; i < number_of_agents_; ++i)
-            {
-              for (int j = i+1; j < number_of_agents_; ++j)
-              {
-                for (int k = j+1; k < number_of_agents_; ++k)
-                {
-                  if (encode3dSepcific(nodeptr->interact_3d(dim, i, j, k))!=
-                      encode3dSepcific(neighbor->interact_3d(dim, i, j, k)))
-                  {
-                    std::cout<<red<<"found such case!!"<<std::endl;
-                    std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
-                    std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
-                    std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
-                    for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
-                    {
-                        std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
+        // if (neighbor->interaction == nodeptr->interaction)
+        // {
+        //   for (int dim :{0,1})
+        //   {
+        //     for (int i = 0; i < number_of_agents_; ++i)
+        //     {
+        //       for (int j = i+1; j < number_of_agents_; ++j)
+        //       {
+        //         for (int k = j+1; k < number_of_agents_; ++k)
+        //         {
+        //           if (encode3dSepcific(nodeptr->interact_3d(dim, i, j, k))!=
+        //               encode3dSepcific(neighbor->interact_3d(dim, i, j, k)))
+        //           {
+        //             std::cout<<red<<"found such case!!"<<std::endl;
+        //             std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
+        //             std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
+        //             std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
+        //             for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
+        //             {
+        //                 std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
-                    }                
-                    std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
-                    for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
-                    {
-                        std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
+        //             }                
+        //             std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
+        //             for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
+        //             {
+        //                 std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
-                    } 
-                    // exit(-1);
-                  }
-                }
-              }
+        //             } 
+        //             // exit(-1);
+        //           }
+        //         }
+        //       }
 
-            }
-          }
+        //     }
+        //   }
 
-          // std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
-        }
+        //   // std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
+        // }
 
         if (nodeptr->state == 1) //in open list
         {
@@ -876,6 +876,11 @@ bool perm_grid_search::run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,
   startPtr->interact_3d = interact_3d;
   startPtr-> g =0.0;
   fromPermToPositions(start_perm, startPtr->agent_positions);
+  if (pastGoalPos_.empty())
+  {
+    pastGoalPos_.push_back(startPtr->agent_positions);
+  }    
+
   // for (int i=0; i<number_of_agents_; i++) //get agent start positions
   // {
   //   for (int j:{0,1})
@@ -989,6 +994,7 @@ exitloop:
           Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm_tmp = best_node_ptr_->perm;  
           Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> interaction_tmp = best_node_ptr_->interaction; 
           vector4d<std::vector<Eigen::Vector2i>> interact_3d_tmp = best_node_ptr_->interact_3d;
+          int node_used_num_1 = node_used_num_;
           clearProcess();
           int sta;
           run(start_perm_tmp,  interaction_tmp, interact_3d_tmp, sta, true);
@@ -1000,6 +1006,8 @@ exitloop:
               pos_path_.insert(pos_path_.begin(), pos_path_inter[ii]);
             }
             status = GOAL_REACHED;
+            runtime_this_round_ = (double)timer_astar.ElapsedUs()/1000.0;
+            node_used_num_ += node_used_num_1;
             return true;
           }
         }
@@ -1035,10 +1043,20 @@ bool perm_grid_search::runonce(std::vector<Eigen::Vector3d>& tmp_path, int &stat
   return true;
 }
 
-void perm_grid_search::getRuntime(double& runtime_this_round, double& time_spent_contact_pt,
+bool perm_grid_search::retrieveAllthese(Eigen::Matrix<int, 2, Eigen::Dynamic>& perm_tmp, 
+  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& interaction_tmp,
+  vector4d<std::vector<Eigen::Vector2i>>& interact_3d_tmp)
+{
+  perm_tmp = best_node_ptr_->perm;  
+  interaction_tmp = best_node_ptr_->interaction; 
+  interact_3d_tmp = best_node_ptr_->interact_3d;
+}
+
+void perm_grid_search::getRuntime(double& runtime_this_round,
                                   int& node_used_num)
 {
-
+  runtime_this_round = runtime_this_round_;
+  node_used_num = node_used_num_;
 }
 
 

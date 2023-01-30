@@ -36,7 +36,8 @@ enum PlannerStatus
 int number_of_agents_ = 7;
 Vector2d grid_pos_origin_(-6.0, -6.0);
 Vector2d grid_size_(2.0, 2.0);
-double max_vel_along_grid_ = 2.0; //this refer to the actual geometric unit, not grid unit
+bool benchmark_mode_ = true;
+double max_vel_along_grid_ = 0.7; //this refer to the actual geometric unit, not grid unit
 double max_acc_along_grid_ = 1.0;
 std::unique_ptr<perm_grid_search> perm_search_;
 std::vector<Eigen::Matrix<int, 2, Dynamic>> pos_path_;
@@ -59,7 +60,7 @@ Vector2d proj_vector_90_;
 Eigen::Matrix<int, 2, Dynamic> agent_perm_;
 vector4d<std::vector<Eigen::Vector2i>> agent_interact_3d_;
 int planner_status_ = PlannerStatus::IDLE;
-
+ros::Publisher pub_log_;
 
 void SetpointpubCB(const ros::TimerEvent& e);
 void odomCB(const nav_msgs::Odometry msg, int id);

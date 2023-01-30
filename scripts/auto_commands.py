@@ -11,29 +11,42 @@ import rospy
 from geometry_msgs.msg import Pose, PoseStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float32MultiArray
-
+import time
 import math
 import random
 import numpy as np
 from numpy import linalg as LA
 
-number_of_robots = 7;
+benchmark_mode = False
+number_of_robots = 10;
 x_min = -10.0;
 x_max = 10.0;
 y_min = -10.0;
 y_max = 10.0;
-tether_length = 15; #previous was 13, this value limites the horizontal distance between base and goal
+tether_length = 13; #previous was 13, this value limites the horizontal distance between base and goal
 goal_height = 5.0;
 close_range = 3.0;
-circle_init_bases = True;
-base_positions = [[-10, 5, 0.0],  #unity sim scene1
-                  [-5.0, -10, 0.0],
-                  [10.0, -5.0, 0.0],
-                  [5.0, 10.0, 0.0],
-                  [-9.5, -5.0, 0.0],
-                  [5.0, -9.5, 0.0],
-                  [9.5, 5.0, 0.0],
-                  [-5.0, 9.5, 0.0]];  
+circle_init_bases = False;
+# base_positions = [[-10, 5, 0.0],  #unity sim scene1
+#                   [-5.0, -10, 0.0],
+#                   [10.0, -5.0, 0.0],
+#                   [5.0, 10.0, 0.0],
+#                   [-9.5, -5.0, 0.0],
+#                   [5.0, -9.5, 0.0],
+#                   [9.5, 5.0, 0.0],
+#                   [-5.0, 9.5, 0.0],
+#                 [10.0, -5.0, 0.0],
+#                 [9.5, 5.0, 0.0]]; 
+base_positions = [ [-9, 2.65,0.0], #unity 10uav scene1
+                  [-9,-6.29,0.0],
+                  [0.5,-9,0.0],
+                  [6.3,-9.0,0.0],
+                  [10,-2.0,0.0],
+                  [9.0,6.3,0.0],
+                  [4.0,9,0.0],
+                  [-6.3,9.0,0.0],
+                  [-4.5,-8,0.0],
+                  [-0.97,8.1] ] ;
 odom_topic_name = 'unity/odom';
 
 class auto_commands:
@@ -60,7 +73,9 @@ class auto_commands:
                     [-8.0, -8.0, goal_height],
                     [8.0, -8.0, goal_height],
                     [8.0, 8.0, goal_height],
-                    [-8.0, 8.0, goal_height] ]          
+                    [-8.0, 8.0, goal_height],
+                    [8.0, 8.0, goal_height],
+                    [-8.0, 8.0, goal_height]                     ]          
         self.goals1=  [[1.5, 2.0, 1.0], #for unity scene config
                     [1.5, -2.0, 1.0],
                     [2.0, 0.0, 1.0],
@@ -68,7 +83,9 @@ class auto_commands:
                     [4.0, 4.0, 1.0],
                     [-4.0, 4.0, 2.0],
                     [-4.0, -4.0, 2.0],
-                    [4.0, -4.0, 2.0] ]        
+                    [4.0, -4.0, 2.0],
+                    [-4.0, -4.0, 2.0],
+                    [4.0, -4.0, 2.0]                     ]        
         self.heartbeattime = [rospy.Time.now() for i in range(number_of_robots)];
 
         if circle_init_bases:
@@ -110,6 +127,12 @@ class auto_commands:
         self.pubRecord = rospy.Publisher('/firefly/record',PoseStamped,queue_size=3,latch=True)
         self.pubGoal_neptune2 = rospy.Publisher('/neptune2/goals',Float32MultiArray,queue_size=1,latch=True)
         self.mtlp_log_received = False;
+        if not self.initialized and benchmark_mode:
+            # xx = raw_input("type any to proceed: ");
+            self.currentrun = self.currentrun+1
+            self.updateGoalsRandom();
+            self.publishgoals();
+            self.initialized = True;
 
 
     #In rospy, the callbacks are all of them in separate threads
@@ -127,6 +150,16 @@ class auto_commands:
         self.pos_prev[idx][2] = data.pose.pose.position.z
         self.gotten_odom[idx] = 1;
 
+    def logCB(self, data):
+        if not benchmark_mode:
+            return
+        time.sleep(1)
+        if self.currentrun<50:           
+            self.updateGoalsRandom();
+            self.currentrun = self.currentrun+1            
+            self.setupAndPublishRecord(1);
+            self.publishgoals();
+
     def checkAndPublish(self, idx):
         if self.completed_current[idx] != 1:
             self.dist_travelled[idx] += \
@@ -142,11 +175,11 @@ class auto_commands:
             # print("INIT: current number of mission completed is "+str(self.currentrun-1))
         
         if not self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.15:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.25:
             self.completed_current[idx] = 1;
             print("Robot "+str(idx)+" has completed current run !")
         elif self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.15:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.25:
             self.completed_current[idx] = 0;
 
         if (self.initialized and np.prod(self.completed_current) == 1 and idx==0\
@@ -158,7 +191,21 @@ class auto_commands:
             self.currentrun = self.currentrun+1            
             self.setupAndPublishRecord(1);
             self.publishgoals();
-
+        if  idx==0 and self.initialized and (rospy.Time.now()-self.start_pub_time).to_sec()>60 \
+        and self.currentrun<101:
+            # xx = raw_input("type any to proceed: ");
+            # if xx!="s":
+            #     return;
+            # self.seed_number = self.seed_number +1;
+            # np.random.seed(self.seed_number);
+            self.updateGoalsRandom();
+            # self.currentrun = 1           
+            # print("CHANGE: resetting seed number to "+str(self.seed_number)+" !!!")
+            self.currentrun = self.currentrun+1            
+            print("CHANGE: resetting goal points !!!")
+            self.failingcase = self.failingcase+1            
+            self.setupAndPublishRecord(0);
+            self.publishgoals();
 
     def setupAndPublishRecord(self, success):
         msgRecord=PoseStamped()  
@@ -234,6 +281,8 @@ def startNode():
     for i in range(0,number_of_robots):
         rospy.Subscriber('/firefly'+str(i+1)+"/"+odom_topic_name, Odometry, c.odomCB, i)
 
+    rospy.Subscriber('/firefly/log_for_plot', Odometry, c.logCB)
+    
     rospy.spin()
 
 if __name__ == '__main__':

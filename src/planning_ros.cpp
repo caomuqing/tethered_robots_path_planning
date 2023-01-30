@@ -57,6 +57,7 @@ int main(int argc, char **argv)
   ros::Timer SetpointpubCBTimer = nh2.createTimer(ros::Duration(0.1), SetpointpubCB);  
   ros::Subscriber goal_sub = nh3.subscribe<std_msgs::Float32MultiArray>("goals", 
                               1, GoalCallback);
+  pub_log_ = nh1.advertise<nav_msgs::Odometry>("/firefly/log_for_plot", 1);
 
   ros::AsyncSpinner spinner1(1, &custom_queue1);  // 1 thread for the custom_queue1 // 0 means threads= # of CPU cores
   ros::AsyncSpinner spinner2(1, &custom_queue2);  // 1 thread for the custom_queue2 // 0 means threads= # of CPU cores
@@ -127,6 +128,59 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
     perm_search_->getPosPath(pos_path_);
     publishing_setpoint_ = true;
   }  
+  double runtime_this_round;
+  int node_used_num;
+  perm_search_ ->getRuntime(runtime_this_round, node_used_num);
+  nav_msgs::Odometry log_msg_;
+  log_msg_.header.stamp = ros::Time::now();
+
+  double totaldistance = 0.0;
+  double totaltime = 0.0;
+  if (benchmark_mode_)
+  {
+    MatrixXd grid_pos_end = pos_path_.back().cast<double>();
+    grid_pos_end.row(0) = grid_pos_end.row(0) * grid_size_(0);
+    grid_pos_end.row(1) = grid_pos_end.row(1) * grid_size_(1);   
+    Eigen::Matrix<double, 2, Dynamic> agents_pos_end = projection_matrix * grid_pos_end;
+       
+    for (int i = 0; i < number_of_agents_; ++i)
+    {
+      agents_pos_end(0,i) = grid_pos_origin_(0)+agents_pos_end(0,i);
+      agents_pos_end(1,i) = grid_pos_origin_(1)+agents_pos_end(1,i);
+    }
+
+    double max_dist_start = 0.0, max_dist_end = 0.0;
+    for (int i = 0; i < number_of_agents_; ++i)
+    {
+      if (max_dist_start<(agent_start_.row(i) - agent_start_on_grid_.row(i)).norm())
+      {
+        max_dist_start = (agent_start_.row(i) - agent_start_on_grid_.row(i)).norm();
+      }
+      if (max_dist_end<(agents_pos_end.col(i)- agent_target_.block(i,0,1,2).transpose()).norm())
+      {
+        max_dist_end = (agents_pos_end.col(i)- agent_target_.block(i,0,1,2).transpose()).norm();
+      }
+      totaldistance += (agent_start_.row(i) - agent_start_on_grid_.row(i)).norm();
+      totaldistance += (agents_pos_end.col(i)- agent_target_.block(i,0,1,2).transpose()).norm();
+    }
+    totaldistance += (double)pos_path_.size()*grid_size_(0)*2;
+    ROS_WARN("max_dist_start is %f", max_dist_start);   
+    ROS_WARN("max_dist_end is %f", max_dist_end);   
+
+    ROS_WARN("agent avg distance is %f", totaldistance/number_of_agents_);    
+    totaltime = (max_dist_end+max_dist_start+(double)pos_path_.size()*grid_size_(0))/max_vel_along_grid_;
+    perm_search_ ->retrieveAllthese(agent_perm_, agent_interaction_, agent_interact_3d_);
+    agent_pos_ = agent_target_;
+  }
+
+  // log_msg_.header.frame_id = world_name_;
+  log_msg_.pose.pose.position.x = search_status ==1? 1.0:0.0;
+  log_msg_.pose.pose.position.y = runtime_this_round; //prevent large number when undefined
+  log_msg_.pose.pose.position.z = (float) node_used_num;    
+  log_msg_.pose.pose.orientation.x = totaldistance/number_of_agents_;    
+  log_msg_.pose.pose.orientation.y = totaltime;  
+  log_msg_.pose.pose.orientation.z = 0.0;    
+  pub_log_.publish(log_msg_);     
 }
 
 void Listener::odomCB(const nav_msgs::Odometry::ConstPtr& msg)
@@ -146,6 +200,22 @@ void SetpointpubCB(const ros::TimerEvent& e)
 {
   if (!gotten_all_odoms_) //initialize projection plane
   {
+    if (benchmark_mode_)
+    {
+
+      double one_slice = 3.1415927*2/number_of_agents_;
+      double circle_init_radius = 10;
+
+      for (int i=0; i<number_of_agents_; i++)
+      {
+        double theta = one_slice*i;
+        agent_pos_(i,0) = -circle_init_radius*cosf(theta);
+        agent_pos_(i,1) = -circle_init_radius*sinf(theta);                      
+        agent_pos_prev_(i,0) = -circle_init_radius*cosf(theta);
+        agent_pos_prev_(i,1) = -circle_init_radius*sinf(theta);        }
+      /* code */
+    }
+
     gotten_all_odoms_ = true;
     for (int i = 0; i < number_of_agents_; ++i)
     {
@@ -159,7 +229,7 @@ void SetpointpubCB(const ros::TimerEvent& e)
     getProjectionPlane();
   }
 
-  if (found_projection_ && update_timer_.ElapsedMs()>100.0) //update agent status
+  if (found_projection_ && update_timer_.ElapsedMs()>100.0 && !benchmark_mode_) //update agent status
   {
     agent_pos_proj_prev_ = agent_pos_proj_;
     for (int i = 0; i < number_of_agents_; ++i)

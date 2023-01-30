@@ -120,6 +120,9 @@ public:
            vector4d<std::vector<Eigen::Vector2i>>& interact_3d, int& status, bool is_second_try=false);
 
   bool runonce(std::vector<Eigen::Vector3d>& tmp_path, int &status);
+  bool retrieveAllthese(Eigen::Matrix<int, 2, Eigen::Dynamic>& perm_tmp, 
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>& interaction_tmp,
+    vector4d<std::vector<Eigen::Vector2i>>& interact_3d_tmp);
 
   void recoverPath(NodePtr node1_ptr);
 
@@ -150,7 +153,7 @@ public:
   void generatePwpOut();
   void getPermPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
   void getPosPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
-  void getRuntime(double& runtime_this_round, double& time_spent_contact_pt, int& node_used_num);
+  void getRuntime(double& runtime_this_round, int& node_used_num);
   bool check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Vector2i to_add);
 protected:
 private:
@@ -181,7 +184,7 @@ private:
   int number_of_agents_ = 1;
   double max_runtime_ = 100.5;  //[s]
   int node_used_num_ = 0;
-  int node_num_max_ = 70000;
+  int node_num_max_ = 30000;
   NodeHashTable expanded_nodes_;
   NodeHashTable generated_nodes_;
   NodePtr initialnode_;
