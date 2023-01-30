@@ -18,7 +18,7 @@ import numpy as np
 from numpy import linalg as LA
 
 benchmark_mode = False
-number_of_robots = 10;
+number_of_robots = 7;
 x_min = -10.0;
 x_max = 10.0;
 y_min = -10.0;
@@ -166,7 +166,7 @@ class auto_commands:
                     math.sqrt(sum((self.pos[idx][i]-self.pos_prev[idx][i])**2 for i in range(0,3)));
 
         if not self.initialized and idx==0 and np.prod(self.gotten_odom) ==1:
-            # xx = raw_input("type any to proceed: ");
+            xx = raw_input("type any to proceed: ");
             self.currentrun = self.currentrun+1
             self.updateGoalsRandom();
             self.publishgoals();
@@ -183,7 +183,7 @@ class auto_commands:
             self.completed_current[idx] = 0;
 
         if (self.initialized and np.prod(self.completed_current) == 1 and idx==0\
-            ):
+            or raw_input("type s to proceed: ")=="s"):
             # xx = raw_input("type any to proceed: ");
             # if xx!="s":
             #     return;

@@ -71,6 +71,7 @@ void getAgentPosFromPerm(Matrix<double, 2, Dynamic>& agent_pos_projected,
                         Matrix<int, 2, Dynamic>& agent_perm);
 void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg);
 void publishTrajCmd(MatrixXd& agents_cmd_pva);
+void reactiveController(bool& controller_enabled, Eigen::Vector2d& tarPos, int& itr, int agent_id);
 
 std_msgs::ColorRGBA getColorJetInt(int id, int min, int max);
 

@@ -187,6 +187,10 @@ void Listener::odomCB(const nav_msgs::Odometry::ConstPtr& msg)
 {
   // if (timer_getting_odoms_[agent_id].ElapsedMs() < 100.0)
   //   return;
+  if (gotten_all_odoms_ && benchmark_mode_)
+  {
+    return;
+  }
   agent_pos_prev_.row(getId()) = agent_pos_.row(getId());
   agent_pos_(getId(),0) = msg->pose.pose.position.x;
   agent_pos_(getId(),1) = msg->pose.pose.position.y;
@@ -200,21 +204,21 @@ void SetpointpubCB(const ros::TimerEvent& e)
 {
   if (!gotten_all_odoms_) //initialize projection plane
   {
-    if (benchmark_mode_)
-    {
+    // if (benchmark_mode_)
+    // {
 
-      double one_slice = 3.1415927*2/number_of_agents_;
-      double circle_init_radius = 10;
+    //   double one_slice = 3.1415927*2/number_of_agents_;
+    //   double circle_init_radius = 10;
 
-      for (int i=0; i<number_of_agents_; i++)
-      {
-        double theta = one_slice*i;
-        agent_pos_(i,0) = -circle_init_radius*cosf(theta);
-        agent_pos_(i,1) = -circle_init_radius*sinf(theta);                      
-        agent_pos_prev_(i,0) = -circle_init_radius*cosf(theta);
-        agent_pos_prev_(i,1) = -circle_init_radius*sinf(theta);        }
-      /* code */
-    }
+    //   for (int i=0; i<number_of_agents_; i++)
+    //   {
+    //     double theta = one_slice*i;
+    //     agent_pos_(i,0) = -circle_init_radius*cosf(theta);
+    //     agent_pos_(i,1) = -circle_init_radius*sinf(theta);                      
+    //     agent_pos_prev_(i,0) = -circle_init_radius*cosf(theta);
+    //     agent_pos_prev_(i,1) = -circle_init_radius*sinf(theta);        }
+    //   /* code */
+    // }
 
     gotten_all_odoms_ = true;
     for (int i = 0; i < number_of_agents_; ++i)
@@ -417,11 +421,48 @@ void SetpointpubCB(const ros::TimerEvent& e)
     {
 
       agents_cmd_pva.block(i, 0, 1, 3) =  agent_pos_.row(i);
-      agents_cmd_pva(i,2) = 2.0;
+      agents_cmd_pva(i,2) = 1.1;
     }
   }  
-  // if (planner_status_ != PlannerStatus::IDLE)
+  for (int i = 0; i < number_of_agents_; ++i)
+  {
+    Vector2d tarpos = agents_cmd_pva.block(i, 0, 1, 2).transpose();
+    bool contEnabled = false;
+    int itr = 0;
+    reactiveController(contEnabled, tarpos, itr, i);
+    agents_cmd_pva.block(i, 0, 1, 2) = tarpos.transpose();
+  }
   publishTrajCmd(agents_cmd_pva);
+}
+
+void reactiveController(bool& controller_enabled, Eigen::Vector2d& tarPos, int& itr, int agent_id)
+{
+  if (itr>100)
+  {
+    controller_enabled = false;
+    return;
+  }
+  for (int i=0; i<number_of_agents_; i++)
+  {
+    if (i==agent_id) continue;
+    Eigen::Vector2d agent_i_pos = agent_pos_.block(i,0,1,2).transpose();
+    if (agent_i_pos(0)<-500) continue;
+
+    if ((tarPos-agent_i_pos).norm()<0.7*grid_size_(0)-0.01)
+    {
+      controller_enabled = true;
+      itr ++;
+      // std::cout<<bold<<red<<"itr is" <<itr<<std::endl;
+      // std::cout<<bold<<red<<"tarPos original is" <<tarPos<<std::endl; 
+      tarPos = agent_i_pos + (tarPos-agent_i_pos) *
+              1.2*grid_size_(0)/(tarPos-agent_i_pos).norm();
+
+      // std::cout<<bold<<red<<"latestCheckingPosAgent_[i] is" <<latestCheckingPosAgent_[i]<<std::endl;  
+      // std::cout<<bold<<red<<"tarPos new is" <<tarPos<<std::endl;        
+      reactiveController(controller_enabled, tarPos, itr, agent_id);
+      return;
+    }
+  }  
 }
 
 void getProjectionPlane()
