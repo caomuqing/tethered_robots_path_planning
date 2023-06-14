@@ -3,7 +3,7 @@
 
 This repository contains the supplementary document and the source code for the work.
 ### 
-[![Path Planning for Multiple Tethered Robots Using Topological Braids](./imgs/rssdemo.png)](https://youtu.be/igP7eaOyZuc)
+[![Path Planning for Multiple Tethered Robots Using Topological Braids](./rssdemo.png)](https://youtu.be/igP7eaOyZuc)
 
 ## Citation
 
