@@ -10,9 +10,13 @@ This repository contains the supplementary document and the source code for the 
 If you find this work useful, please cite [Path Planning for Multiple Tethered Robots Using Topological Braids](https://arxiv.org/abs/2305.00271) ([pdf](https://arxiv.org/abs/2305.00271), [video](https://youtu.be/igP7eaOyZuc)):
 
 ```bibtex
-  @inproceedings{Cao2023PathPF,
-  title={Path Planning for Multiple Tethered Robots Using Topological Braids},
-  author={Muqing Cao and Kun Cao and Shenghai Yuan and Kangcheng Liu and Yan Loi Wong and Lihua Xie},
-  year={2023}
-}
+@INPROCEEDINGS{Cao-RSS-23, 
+    AUTHOR    = {Muqing Cao AND Kun Cao AND Shenghai Yuan AND Kangcheng Liu AND Yan Loi Wong AND Lihua Xie}, 
+    TITLE     = {{Path Planning for Multiple Tethered Robots Using Topological Braids}}, 
+    BOOKTITLE = {Proceedings of Robotics: Science and Systems}, 
+    YEAR      = {2023}, 
+    ADDRESS   = {Daegu, Republic of Korea}, 
+    MONTH     = {July}, 
+    DOI       = {10.15607/RSS.2023.XIX.106} 
+} 
 ```
