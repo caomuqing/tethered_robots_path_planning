@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   rviz_visual_tools
+  message_generation
 )
 find_package( Eigen3 REQUIRED )
 
@@ -24,7 +25,17 @@ find_package( Eigen3 REQUIRED )
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 # catkin_python_setup()
 
+add_message_files(
+  FILES
+  PermAction.msg
+  PermSequence.msg
+)
 
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -60,7 +71,7 @@ catkin_package(
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
-set(CMAKE_BUILD_TYPE Release) #From terminal: catkin config -DCMAKE_BUILD_TYPE=Release (or RelWithDebInfo) or Debug
+set(CMAKE_BUILD_TYPE Debug) #From terminal: catkin config -DCMAKE_BUILD_TYPE=Release (or RelWithDebInfo) or Debug
 
 ###########
 ## Build ##

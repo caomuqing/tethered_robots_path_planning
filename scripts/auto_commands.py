@@ -128,7 +128,7 @@ class auto_commands:
         self.pubGoal_neptune2 = rospy.Publisher('/neptune2/goals',Float32MultiArray,queue_size=1,latch=True)
         self.mtlp_log_received = False;
         if not self.initialized and benchmark_mode:
-            # xx = raw_input("type any to proceed: ");
+            # xx = input("type any to proceed: ");
             self.currentrun = self.currentrun+1
             self.updateGoalsRandom();
             self.publishgoals();
@@ -166,7 +166,7 @@ class auto_commands:
                     math.sqrt(sum((self.pos[idx][i]-self.pos_prev[idx][i])**2 for i in range(0,3)));
 
         if not self.initialized and idx==0 and np.prod(self.gotten_odom) ==1:
-            xx = raw_input("type any to proceed: ");
+            xx = input("type any to proceed: ");
             self.currentrun = self.currentrun+1
             self.updateGoalsRandom();
             self.publishgoals();
@@ -182,18 +182,18 @@ class auto_commands:
             LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.25:
             self.completed_current[idx] = 0;
 
-        if (self.initialized and np.prod(self.completed_current) == 1 and idx==0\
-            or raw_input("type s to proceed: ")=="s"):
-            # xx = raw_input("type any to proceed: ");
+        if (self.initialized and np.prod(self.completed_current) == 1 and idx==0):
+            # or input("type s to proceed: ")=="s"):
+            # xx = input("type any to proceed: ");
             # if xx!="s":
             #     return;
             self.updateGoalsRandom();
             self.currentrun = self.currentrun+1            
             self.setupAndPublishRecord(1);
             self.publishgoals();
-        if  idx==0 and self.initialized and (rospy.Time.now()-self.start_pub_time).to_sec()>60 \
+        if  idx==0 and self.initialized and (rospy.Time.now()-self.start_pub_time).to_sec()>800 \
         and self.currentrun<101:
-            # xx = raw_input("type any to proceed: ");
+            # xx = input("type any to proceed: ");
             # if xx!="s":
             #     return;
             # self.seed_number = self.seed_number +1;
@@ -288,4 +288,4 @@ def startNode():
 if __name__ == '__main__':
     rospy.init_node('auto_commands')  
     startNode()
-    print "auto_commands started" 
+    print ("auto_commands started") 
