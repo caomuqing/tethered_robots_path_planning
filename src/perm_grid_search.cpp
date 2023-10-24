@@ -434,6 +434,7 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
   }
 
   NodePtr tmp = result_ptr;
+  neptune2::PermSequence permsequence;
 
   while (tmp != NULL)
   {
@@ -445,13 +446,36 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
     // std::cout <<bold<<green<< tmp->interaction << std::endl;     
     perm_path.push_back(tmp->perm);
     pos_path.push_back(tmp->agent_positions);
+
+    if (tmp->previous != NULL) //not the first node
+    {
+      neptune2::PermAction action1;
+      action1.perm_id = tmp->action[0];
+      action1.axis = tmp->action[1];
+      action1.action = tmp->action[2];
+      permsequence.actions.push_back(action1);
+    }
+    else
+    { //set up the perm vector of the initial node
+      permsequence.perm.clear();
+      for (size_t i = 0; i < 2; i++)
+      {
+        for (size_t j = 0; j < tmp->previous->perm.cols(); j++)
+        {
+          permsequence.perm.push_back(tmp->previous->perm(i,j));
+        }
+      }
+    }
+
     tmp = tmp->previous;
   }
 
   std::reverse(std::begin(perm_path), std::end(perm_path));  
   std::reverse(std::begin(pos_path), std::end(pos_path));  
+  std::reverse(std::begin(permsequence.actions), std::end(permsequence.actions));  
   perm_path_ = perm_path;
   pos_path_ = pos_path;
+  permSequence_ = permsequence;
 }
 
 void perm_grid_search::getPermPath(std::vector<Eigen::Matrix<int, 2, Dynamic>>& result)
@@ -467,6 +491,14 @@ void perm_grid_search::getPosPath(std::vector<Eigen::Matrix<int, 2, Dynamic>>& r
   result.clear();
 
   result = pos_path_;
+
+}
+
+void perm_grid_search::getPermSequence(neptune2::PermSequence& result)
+{
+  result.actions.clear();
+
+  result = permSequence_;
 
 }
 
@@ -539,6 +571,9 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
 
       int infront_or_behind = (current->agent_positions(1-dim, agent_current) 
                               < current->agent_positions(1-dim, agent_to_exchange))?1:-1;
+      neighbor->action[0] = j;
+      neighbor->action[1] = dim;
+      neighbor->action[2] = -infront_or_behind; // +1 is crossing on the + side
 
       if (dim==0) //first axis
       {

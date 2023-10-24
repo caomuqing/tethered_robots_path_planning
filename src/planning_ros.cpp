@@ -58,6 +58,7 @@ int main(int argc, char **argv)
   ros::Subscriber goal_sub = nh3.subscribe<std_msgs::Float32MultiArray>("goals", 
                               1, GoalCallback);
   pub_log_ = nh1.advertise<nav_msgs::Odometry>("/firefly/log_for_plot", 1);
+  pub_permsequence_ = nh1.advertise<neptune2::PermSequence>("/permsequence", 1);
 
   ros::AsyncSpinner spinner1(1, &custom_queue1);  // 1 thread for the custom_queue1 // 0 means threads= # of CPU cores
   ros::AsyncSpinner spinner2(1, &custom_queue2);  // 1 thread for the custom_queue2 // 0 means threads= # of CPU cores
@@ -126,7 +127,11 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
   {
     pos_path_.clear();
     perm_search_->getPosPath(pos_path_);
+    
+    neptune2::PermSequence permsequence;
+    perm_search_->getPermSequence(permsequence);
     publishing_setpoint_ = true;
+    pub_permsequence_.publish(permsequence);
   }  
   double runtime_this_round;
   int node_used_num;

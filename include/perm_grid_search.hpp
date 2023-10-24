@@ -15,6 +15,8 @@
 #include <queue>
 #include <tuple>
 #include <vector3d.hpp>
+#include "neptune2/PermSequence.h"
+#include <std_msgs/Int32.h>
 
 typedef struct Node Node;  // needed to be able to have a pointer inside the struct
 
@@ -30,6 +32,7 @@ struct Node
   Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> interaction;
   Eigen::Matrix<int, 2, Eigen::Dynamic> agent_positions;
   vector4d<std::vector<Eigen::Vector2i>> interact_3d;
+  std::vector<int> action{-1, -1, -1}; // permutation id, axis, plus or minus
   // e.g., in interact_3d, \sigma_1^1 is (1,1), \sigma_2^-1 is (2,-1)
 };
 
@@ -153,6 +156,7 @@ public:
   void generatePwpOut();
   void getPermPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
   void getPosPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
+  void getPermSequence(neptune2::PermSequence& result);  
   void getRuntime(double& runtime_this_round, int& node_used_num);
   bool check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Vector2i to_add);
 protected:
@@ -197,6 +201,7 @@ private:
   std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> perm_path_;
   std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> pos_path_;
   std::vector<int> list_of_agents_;
+  neptune2::PermSequence permSequence_;
 };
 
 #endif
