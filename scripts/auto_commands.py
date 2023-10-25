@@ -16,9 +16,10 @@ import math
 import random
 import numpy as np
 from numpy import linalg as LA
+from snapstack_msgs.msg import Goal, State
 
 benchmark_mode = False
-number_of_robots = 7;
+number_of_robots = 5;
 x_min = -10.0;
 x_max = 10.0;
 y_min = -10.0;
@@ -150,6 +151,21 @@ class auto_commands:
         self.pos_prev[idx][2] = data.pose.pose.position.z
         self.gotten_odom[idx] = 1;
 
+    def stateCB(self, data, args):
+        idx = args
+
+        self.pos[idx][0] = data.pos.x
+        self.pos[idx][1] = data.pos.y
+        self.pos[idx][2] = data.pos.z
+        self.pose.orientation = data.quat
+        if np.prod(self.gotten_odom) !=1:
+            print("INIT: "+str(idx)+" robot has x = "+str(self.pos[idx][0]) + " y = "+str(self.pos[idx][1]))
+        self.checkAndPublish(idx)
+        self.pos_prev[idx][0] = data.pos.x
+        self.pos_prev[idx][1] = data.pos.y
+        self.pos_prev[idx][2] = data.pos.z
+        self.gotten_odom[idx] = 1;
+
     def logCB(self, data):
         if not benchmark_mode:
             return
@@ -184,7 +200,7 @@ class auto_commands:
 
         if (self.initialized and np.prod(self.completed_current) == 1 and idx==0):
             # or input("type s to proceed: ")=="s"):
-            # xx = input("type any to proceed: ");
+            xx = input("type any to proceed: ");
             # if xx!="s":
             #     return;
             self.updateGoalsRandom();
@@ -193,7 +209,7 @@ class auto_commands:
             self.publishgoals();
         if  idx==0 and self.initialized and (rospy.Time.now()-self.start_pub_time).to_sec()>800 \
         and self.currentrun<101:
-            # xx = input("type any to proceed: ");
+            xx = input("type any to proceed: ");
             # if xx!="s":
             #     return;
             # self.seed_number = self.seed_number +1;
@@ -280,7 +296,7 @@ def startNode():
     #s = rospy.Service("/change_mode",MissionModeChange,c.srvCB)
     for i in range(0,number_of_robots):
         rospy.Subscriber('/firefly'+str(i+1)+"/"+odom_topic_name, Odometry, c.odomCB, i)
-
+        rospy.Subscriber("/firefly"+str(i+1)+"/state", State, c.stateCB, i)
     rospy.Subscriber('/firefly/log_for_plot', Odometry, c.logCB)
     
     rospy.spin()

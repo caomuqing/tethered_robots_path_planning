@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   rviz_visual_tools
   message_generation
+  snapstack_msgs
 )
 find_package( Eigen3 REQUIRED )
 

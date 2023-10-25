@@ -45,9 +45,13 @@ int main(int argc, char **argv)
     ros::Subscriber sub_odom_ = nh1.subscribe<nav_msgs::Odometry>
                                     ("/firefly"+std::to_string(i+1)+"/unity/odom", 
                                       1, &Listener::odomCB, &idListener_[i]);
+    ros::Subscriber sub_state_ = nh1.subscribe<snapstack_msgs::State>
+                                    ("/firefly"+std::to_string(i+1)+"/state", 
+                                      1, &Listener::stateCB, &idListener_[i]);
     ros::Publisher cmd_pub = nh1.advertise<trajectory_msgs::MultiDOFJointTrajectory>
                               ("/firefly"+std::to_string(i+1)+"/command/trajectory", 1);
     sub_odom_vector_.push_back(sub_odom_);
+    sub_odom_vector_.push_back(sub_state_);
     cmd_pub_vec_.push_back(cmd_pub);
 
     MyTimer timerr(true);
@@ -118,6 +122,7 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
   planner_status_ = PlannerStatus::MOVING_START;
   Eigen::Matrix<int, 2, Dynamic> goal_perm = MatrixXi::Zero(2, number_of_agents_);  
   getAgentPerm(goals_proj, goal_perm); 
+  goal_perm_ = goal_perm;
 
   perm_search_ ->setGoal(goal_perm);   
   int search_status = 0;
@@ -202,6 +207,20 @@ void Listener::odomCB(const nav_msgs::Odometry::ConstPtr& msg)
   agent_pos_(getId(),2) = msg->pose.pose.position.z;
 
   // timer_getting_odoms_[agent_id].Reset();
+
+}
+
+void Listener::stateCB(const snapstack_msgs::State::ConstPtr& msg)
+{
+
+  if (gotten_all_odoms_ && benchmark_mode_)
+  {
+    return;
+  }
+  agent_pos_prev_.row(getId()) = agent_pos_.row(getId());
+  agent_pos_(getId(),0) = msg->pos.x;
+  agent_pos_(getId(),1) = msg->pos.y;
+  agent_pos_(getId(),2) = msg->pos.z;
 
 }
 
@@ -323,8 +342,10 @@ void SetpointpubCB(const ros::TimerEvent& e)
     getAgentPerm(agent_pos_proj_, agent_perm_);
     // std::cout<<"current agent positions in projected:"<<std::endl;
     // std::cout<<agent_pos_proj_<<std::endl;
-    // std::cout<<"current agent perm"<<std::endl;
-    // std::cout<<agent_perm_<<std::endl;
+    std::cout<<"current agent perm"<<std::endl;
+    std::cout<<agent_perm_<<std::endl;
+    std::cout<<"\033[32mcurrent GOAL perm\033[0m"<<std::endl;
+    std::cout<<"\033[32m"<<goal_perm_<<"\033[0m"<<std::endl;    
     update_timer_.Reset();
   }
 

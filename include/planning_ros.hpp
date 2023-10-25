@@ -17,6 +17,8 @@
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 #include <vector3d.hpp>
 #include "entangle_check.hpp"
+#include <snapstack_msgs/State.h>
+#include <snapstack_msgs/Goal.h>
 
 using namespace termcolor;
 using namespace Eigen;
@@ -33,10 +35,10 @@ enum PlannerStatus
   MOVING_END = 3
 };
 
-int number_of_agents_ = 7;
+int number_of_agents_ = 5;
 Vector2d grid_pos_origin_(-6.0, -6.0);
 Vector2d grid_size_(2.0, 2.0);
-bool benchmark_mode_ = true;
+bool benchmark_mode_ = false;
 double max_vel_along_grid_ = 0.7; //this refer to the actual geometric unit, not grid unit
 double max_acc_along_grid_ = 1.0;
 std::unique_ptr<perm_grid_search> perm_search_;
@@ -58,6 +60,7 @@ double tolerance_init_distance_ = 0.5;
 Vector2d proj_vector_0_;
 Vector2d proj_vector_90_;
 Eigen::Matrix<int, 2, Dynamic> agent_perm_;
+Eigen::Matrix<int, 2, Dynamic> goal_perm_;
 vector4d<std::vector<Eigen::Vector2i>> agent_interact_3d_;
 int planner_status_ = PlannerStatus::IDLE;
 ros::Publisher pub_log_, pub_permsequence_;
@@ -85,6 +88,7 @@ public:
     agent_id = id;
   }
   void odomCB(const nav_msgs::Odometry::ConstPtr& msg);
+  void stateCB(const snapstack_msgs::State::ConstPtr& msg);  
   void setId(int id)
   {
   	agent_id = id;
