@@ -452,49 +452,22 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
 
     if (tmp->previous != NULL) //not the first node
     {
-      if (tmp->action[1] == prev_axis) //same as previous axis
-      {
-        neptune2::PermAction action1;
-        action1.perm_id = tmp->action[0];
-        action1.axis = tmp->action[1];
-        action1.action = tmp->action[2];
-        permsequence.actions.push_back(action1);
-
-      }
-      else
-      {
-        permsequence.perm.clear();
-        for (size_t i = 0; i < 2; i++)
-        {
-          for (size_t j = 0; j < tmp->perm.cols(); j++)
-          {
-            permsequence.perm.push_back(tmp->perm(i,j));
-          }
-        }
-        sequence_vector.push_back(permsequence);
-
-        permsequence.actions.clear(); //add a new sequence of actions
-        neptune2::PermAction action1;
-        action1.perm_id = tmp->action[0];
-        action1.axis = tmp->action[1];
-        action1.action = tmp->action[2];
-        permsequence.actions.push_back(action1);
-        prev_axis = tmp->action[1];
-      }
-
+      neptune2::PermAction action1;
+      action1.perm_id = tmp->action[0];
+      action1.axis = tmp->action[1];
+      action1.action = tmp->action[2];
+      permsequence.actions.push_back(action1);
     }
     else
     { //set up the perm vector of the initial node
       permsequence.perm.clear();
       for (size_t i = 0; i < 2; i++)
       {
-        for (size_t j = 0; j < tmp->perm.cols(); j++)
+        for (size_t j = 0; j < tmp->previous->perm.cols(); j++)
         {
-          permsequence.perm.push_back(tmp->perm(i,j));
+          permsequence.perm.push_back(tmp->previous->perm(i,j));
         }
       }
-      sequence_vector.push_back(permsequence);
-
     }
 
     tmp = tmp->previous;
