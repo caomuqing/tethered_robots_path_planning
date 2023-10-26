@@ -119,9 +119,9 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
       (agents_pos.colwise()+grid_pos_origin_).transpose();
 
   setpoint_timer_.Reset();  
-  planner_status_ = PlannerStatus::MOVING_START;
   Eigen::Matrix<int, 2, Dynamic> goal_perm = MatrixXi::Zero(2, number_of_agents_);  
   getAgentPerm(goals_proj, goal_perm); 
+  final_goal_perm_ = goal_perm;
   goal_perm_ = goal_perm;
 
   perm_search_ ->setGoal(goal_perm);   
@@ -135,8 +135,10 @@ void GoalCallback(const std_msgs::Float32MultiArray::ConstPtr &msg) {
     
     neptune2::PermSequence permsequence;
     perm_search_->getPermSequence(permsequence);
+    perm_search_->getPermSequenceVector(sequence_vector_);
+    planner_status_ = PlannerStatus::MOVING_START;
     publishing_setpoint_ = true;
-    pub_permsequence_.publish(permsequence);
+    current_leg_ = 0;
   }  
   double runtime_this_round;
   int node_used_num;
@@ -356,109 +358,51 @@ void SetpointpubCB(const ros::TimerEvent& e)
   double time_elapsed = setpoint_timer_.ElapsedMs()/1000.0;  
   if (planner_status_ == PlannerStatus::MOVING_START)
   {
-    MatrixXd diff = agent_start_on_grid_ - agent_start_ ;
-    MatrixXd time_needed = diff.rowwise().norm()/max_vel_along_grid_;
-    double time_max = time_needed.maxCoeff();
-
-    for (int i = 0; i < number_of_agents_; ++i)
+    neptune2::PermSequence permsequence = sequence_vector_[current_leg_];
+    if (sequence_vector_.size()!=current_leg_+1) //is not the last sequence to be executed
     {
-      if (time_elapsed < time_needed(i))
+      neptune2::PermAction fake_action;
+      fake_action.perm_id = -100;
+      fake_action.axis = -100;
+      fake_action.action = -100;
+      permsequence.actions.push_back(fake_action);      
+      for (size_t i = 0; i < 2; i++) //the current goal perm is the start perm of next leg
       {
-        agents_cmd_pva.block(i, 0, 1, 3)= 
-          agent_start_.row(i) + diff.row(i)/time_needed(i)*time_elapsed;
-      }
-      else
-      {
-        agents_cmd_pva.block(i, 0, 1, 3)= agent_start_on_grid_.row(i);
+        for (size_t j = 0; j < number_of_agents_; j++)
+        {
+          goal_perm_(i,j) = sequence_vector_[current_leg_+1].perm[i*number_of_agents_ + j];
+        }
       }
     }
-
-    if ( time_elapsed > time_max && publishing_setpoint_)
+    else
     {
-      planner_status_ = PlannerStatus::FOLLOWING_PLAN;
-      setpoint_timer_.Reset();
+      goal_perm_ = final_goal_perm_;
     }
+
+    pub_permsequence_.publish(permsequence);
+    planner_status_ = PlannerStatus::FOLLOWING_PLAN;
+    setpoint_timer_.Reset();
   }
   else if (planner_status_ == PlannerStatus::FOLLOWING_PLAN)
   {
-    // std::cout<<green<<"time elapsed is "<<time_elapsed<<" s"<<std::endl;
-    bool finished = false;
-    for (int i = 0; i < pos_path_.size()-1; ++i)
+    if (agent_perm_ == goal_perm_)
     {
-      double time_for_this_seg = ((pos_path_[i+1]-pos_path_[i]).cast<double>().
-                    transpose()*grid_size_).norm()/max_vel_along_grid_;
-      if (time_elapsed>time_for_this_seg)
+      if (sequence_vector_.size()!=current_leg_+1) //it is not the end
       {
-        if (i!=pos_path_.size()-2)
-        {
-          time_elapsed -= time_for_this_seg;
-          continue;
-        }
-        else
-        {
-          time_elapsed = time_for_this_seg;
-          finished = true;
-        }
-      }
-
-      MatrixXd grid_pos = pos_path_[i].cast<double>() + 
-              (pos_path_[i+1]-pos_path_[i]).cast<double>()*time_elapsed/time_for_this_seg;
-      grid_pos.row(0) = grid_pos.row(0) * grid_size_(0);
-      grid_pos.row(1) = grid_pos.row(1) * grid_size_(1);   
-      Eigen::Matrix<double, 2, Dynamic> agents_pos = projection_matrix * grid_pos;
-         
-      for (int i = 0; i < number_of_agents_; ++i)
-      {
-        agents_cmd_pva(i,0) = grid_pos_origin_(0)+agents_pos(0,i);
-        agents_cmd_pva(i,1) = grid_pos_origin_(1)+agents_pos(1,i);
-        agents_cmd_pva(i,2) = agent_target_(i,2);
-      }
-      break;
-    }
-    if (finished)
-    {
-      agent_end_grid_ = agents_cmd_pva.block(0,0,number_of_agents_,3);
-      planner_status_ = PlannerStatus::MOVING_END;
-      setpoint_timer_.Reset();      
-      publishing_setpoint_ = false;
-    }
-  }
-  else if (planner_status_ == PlannerStatus::MOVING_END)
-  {
-    MatrixXd diff = agent_target_ - agent_end_grid_ ;
-    MatrixXd time_needed = diff.rowwise().norm()/max_vel_along_grid_;
-
-    for (int i = 0; i < number_of_agents_; ++i)
-    {
-      if (time_elapsed < time_needed(i))
-      {
-        agents_cmd_pva.block(i, 0, 1, 3)= 
-          agent_end_grid_.row(i) + diff.row(i)/time_needed(i)*time_elapsed;
+        current_leg_++;
+        planner_status_ = PlannerStatus::MOVING_START;
       }
       else
       {
-        agents_cmd_pva.block(i, 0, 1, 3)= agent_target_.row(i);
-      }
+        planner_status_ = PlannerStatus::IDLE;
+      } 
     }
+     
   }
   else if (planner_status_ == PlannerStatus::IDLE) //publish initial position with height
   {
-    for (int i = 0; i < number_of_agents_; ++i)
-    {
 
-      agents_cmd_pva.block(i, 0, 1, 3) =  agent_pos_.row(i);
-      agents_cmd_pva(i,2) = 1.1;
-    }
   }  
-  for (int i = 0; i < number_of_agents_; ++i)
-  {
-    Vector2d tarpos = agents_cmd_pva.block(i, 0, 1, 2).transpose();
-    bool contEnabled = false;
-    int itr = 0;
-    reactiveController(contEnabled, tarpos, itr, i);
-    agents_cmd_pva.block(i, 0, 1, 2) = tarpos.transpose();
-  }
-  publishTrajCmd(agents_cmd_pva);
 }
 
 void reactiveController(bool& controller_enabled, Eigen::Vector2d& tarPos, int& itr, int agent_id)

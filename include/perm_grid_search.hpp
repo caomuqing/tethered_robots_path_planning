@@ -157,6 +157,7 @@ public:
   void getPermPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
   void getPosPath(std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>>& result);
   void getPermSequence(neptune2::PermSequence& result);  
+  void getPermSequenceVector(std::vector<neptune2::PermSequence>& result);  
   void getRuntime(double& runtime_this_round, int& node_used_num);
   bool check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Vector2i to_add);
 protected:
@@ -202,6 +203,7 @@ private:
   std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> pos_path_;
   std::vector<int> list_of_agents_;
   neptune2::PermSequence permSequence_;
+  std::vector<neptune2::PermSequence> sequence_vector_;  
 };
 
 #endif

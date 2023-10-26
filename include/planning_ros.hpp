@@ -48,6 +48,8 @@ Eigen::Matrix<double, Dynamic, 3> agent_start_on_grid_, agent_end_grid_;
 
 Eigen::Matrix<double, 2, Dynamic> agent_pos_proj_, agent_pos_proj_prev_;
 MatrixXi agent_interaction_;
+std::vector<neptune2::PermSequence> sequence_vector_;  
+int current_leg_ = 0;
 
 MyTimer setpoint_timer_, update_timer_;
 std::vector<MyTimer> timer_getting_odoms_;
@@ -60,7 +62,7 @@ double tolerance_init_distance_ = 0.5;
 Vector2d proj_vector_0_;
 Vector2d proj_vector_90_;
 Eigen::Matrix<int, 2, Dynamic> agent_perm_;
-Eigen::Matrix<int, 2, Dynamic> goal_perm_;
+Eigen::Matrix<int, 2, Dynamic> goal_perm_, final_goal_perm_;
 vector4d<std::vector<Eigen::Vector2i>> agent_interact_3d_;
 int planner_status_ = PlannerStatus::IDLE;
 ros::Publisher pub_log_, pub_permsequence_;

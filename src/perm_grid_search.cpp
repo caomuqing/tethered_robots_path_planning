@@ -437,7 +437,7 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
   std::vector<neptune2::PermSequence> sequence_vector;
   neptune2::PermSequence permsequence;
   int prev_axis = tmp->action[1];
-  std::vector<int> prev_perm;
+  // std::vector<int> prev_perm;
   
   while (tmp != NULL)
   {
@@ -471,6 +471,7 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
             permsequence.perm.push_back(tmp->perm(i,j));
           }
         }
+        std::reverse(std::begin(permsequence.actions), std::end(permsequence.actions));  
         sequence_vector.push_back(permsequence);
 
         permsequence.actions.clear(); //add a new sequence of actions
@@ -493,6 +494,7 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
           permsequence.perm.push_back(tmp->perm(i,j));
         }
       }
+      std::reverse(std::begin(permsequence.actions), std::end(permsequence.actions));  
       sequence_vector.push_back(permsequence);
 
     }
@@ -502,10 +504,12 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
 
   std::reverse(std::begin(perm_path), std::end(perm_path));  
   std::reverse(std::begin(pos_path), std::end(pos_path));  
-  std::reverse(std::begin(permsequence.actions), std::end(permsequence.actions));  
+  std::reverse(std::begin(sequence_vector), std::end(sequence_vector));  
   perm_path_ = perm_path;
   pos_path_ = pos_path;
   permSequence_ = permsequence;
+  sequence_vector_.clear();
+  sequence_vector_ = sequence_vector;
 }
 
 void perm_grid_search::getPermPath(std::vector<Eigen::Matrix<int, 2, Dynamic>>& result)
@@ -529,6 +533,14 @@ void perm_grid_search::getPermSequence(neptune2::PermSequence& result)
   result.actions.clear();
 
   result = permSequence_;
+
+}
+
+void perm_grid_search::getPermSequenceVector(std::vector<neptune2::PermSequence>& result)
+{
+  result.clear();
+
+  result = sequence_vector_;
 
 }
 
