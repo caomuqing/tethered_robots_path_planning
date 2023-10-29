@@ -413,6 +413,18 @@ double perm_grid_search::getH(NodePtr node)
 double perm_grid_search::getG(NodePtr node)
 {
   // return node->previous->g + T_span_;
+  if (node->previous != NULL)
+  {
+    if (node->previous->action[1] == node->action[1])
+    {
+      return node->previous->g + 1.0;
+    }
+    else
+    {
+      return node->previous->g + 2.0;
+    }
+  }
+  
   return node->previous->g + 1.0;
 
 }
@@ -460,6 +472,11 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
         action1.action = tmp->action[2];
         permsequence.actions.push_back(action1);
 
+        if (tmp->perm.row(action1.axis) == tmp->previous->perm.row(action1.axis))
+        {
+          std::cout <<bold<<red<< "STRANGE THING HAPPENS!!!." << std::endl;
+        }
+        
       }
       else
       {
@@ -481,6 +498,10 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
         action1.action = tmp->action[2];
         permsequence.actions.push_back(action1);
         prev_axis = tmp->action[1];
+        if (tmp->perm.row(action1.axis) == tmp->previous->perm.row(action1.axis))
+        {
+          std::cout <<bold<<red<< "STRANGE THING HAPPENS!!!." << std::endl;
+        }        
       }
 
     }
@@ -719,7 +740,14 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
 
       if (nodeptr != NULL) //same node has been added to open list before
       {
-
+        if (neighbor->perm != nodeptr->perm)
+        {
+          std::cout<<red<<"H11111111111111111 "<<std::endl;
+        }        
+        if (neighbor->interaction != nodeptr->interaction)
+        {
+          std::cout<<red<<"HMMMMMMMMMMMMMMMMMMM "<<std::endl;
+        }
         // if (neighbor->interaction == nodeptr->interaction)
         // {
         //   for (int dim :{0,1})
@@ -765,6 +793,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
           if (neighbor->g + bias_*neighbor->h < nodeptr->g + bias_*nodeptr->h)
           {
             nodeptr->previous = current;
+            nodeptr->action = neighbor->action;
             nodeptr->g = neighbor->g;
             nodeptr->h = neighbor->h;
             // std::cout<<blue<<"updating new parrent!!"<<std::endl;
@@ -779,6 +808,10 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
       else generated_nodes_.insert(idx, neighbor); //node generated yet
 
       neighbor-> state = 1;
+      if (neighbor->previous !=NULL && neighbor->perm.row(neighbor->action[1]) == neighbor->previous->perm.row(neighbor->action[1]))
+      {
+        std::cout <<bold<<red<< "[EXPAND] STRANGE THING HAPPENS!!!." << std::endl;
+      }
       openList_.push(neighbor);
       // std::cout << red << "pushing into open list!" <<reset << std::endl;      
       node_used_num_ += 1;   
@@ -1067,6 +1100,7 @@ exitloop:
         {
           std::cout <<green<< "==========[A*] found itermediate goal, now try reaching the terminal goal!!========= " <<std::endl;    
           std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> pos_path_inter = pos_path_;
+          std::vector<neptune2::PermSequence> sequence_vector_inter = sequence_vector_;
           goalPos_ = goalpos_tmp;
           Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm_tmp = best_node_ptr_->perm;  
           Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> interaction_tmp = best_node_ptr_->interaction; 
@@ -1081,6 +1115,10 @@ exitloop:
             for (int ii = pos_path_inter.size()-1; ii >= 0; --ii) //recover the overall path
             {
               pos_path_.insert(pos_path_.begin(), pos_path_inter[ii]);
+            }
+            for (int ii = sequence_vector_inter.size()-1; ii >= 0; --ii) //recover the overall path
+            {
+              sequence_vector_.insert(sequence_vector_.begin(), sequence_vector_inter[ii]);
             }
             status = GOAL_REACHED;
             runtime_this_round_ = (double)timer_astar.ElapsedUs()/1000.0;
@@ -1213,5 +1251,6 @@ bool perm_grid_search::check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Ve
     }
     return false;
   }
+  else if ((v.size()>4)) return false;
   return true;
 }

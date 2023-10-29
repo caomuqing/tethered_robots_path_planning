@@ -66,6 +66,7 @@ Eigen::Matrix<int, 2, Dynamic> goal_perm_, final_goal_perm_;
 vector4d<std::vector<Eigen::Vector2i>> agent_interact_3d_;
 int planner_status_ = PlannerStatus::IDLE;
 ros::Publisher pub_log_, pub_permsequence_;
+int goal_count_ = 0;
 
 void SetpointpubCB(const ros::TimerEvent& e);
 void odomCB(const nav_msgs::Odometry msg, int id);

@@ -344,10 +344,10 @@ void SetpointpubCB(const ros::TimerEvent& e)
     getAgentPerm(agent_pos_proj_, agent_perm_);
     // std::cout<<"current agent positions in projected:"<<std::endl;
     // std::cout<<agent_pos_proj_<<std::endl;
-    std::cout<<"current agent perm"<<std::endl;
-    std::cout<<agent_perm_<<std::endl;
-    std::cout<<"\033[32mcurrent GOAL perm\033[0m"<<std::endl;
-    std::cout<<"\033[32m"<<goal_perm_<<"\033[0m"<<std::endl;    
+    // std::cout<<"current agent perm"<<std::endl;
+    // std::cout<<agent_perm_<<std::endl;
+    // std::cout<<"\033[32mcurrent GOAL perm\033[0m"<<std::endl;
+    // std::cout<<"\033[32m"<<goal_perm_<<"\033[0m"<<std::endl;    
     update_timer_.Reset();
   }
 
@@ -379,6 +379,16 @@ void SetpointpubCB(const ros::TimerEvent& e)
       goal_perm_ = final_goal_perm_;
     }
 
+    if (agent_perm_.row(permsequence.actions[0].axis) == goal_perm_.row(permsequence.actions[0].axis))
+    {
+      ROS_WARN("[PLANNING ROS] Strange thing happens!!");
+    }
+    
+    std::cout<<"current agent perm"<<std::endl;
+    std::cout<<agent_perm_<<std::endl;
+    std::cout<<"\033[32mcurrent GOAL perm\033[0m"<<std::endl;
+    std::cout<<"\033[32m"<<goal_perm_<<"\033[0m"<<std::endl;    
+    // std::getchar();
     pub_permsequence_.publish(permsequence);
     planner_status_ = PlannerStatus::FOLLOWING_PLAN;
     setpoint_timer_.Reset();
@@ -386,6 +396,12 @@ void SetpointpubCB(const ros::TimerEvent& e)
   else if (planner_status_ == PlannerStatus::FOLLOWING_PLAN)
   {
     if (agent_perm_ == goal_perm_)
+    {
+      goal_count_ ++;
+    }
+    else goal_count_ = 0;
+
+    if (goal_count_>5)
     {
       if (sequence_vector_.size()!=current_leg_+1) //it is not the end
       {
@@ -396,8 +412,8 @@ void SetpointpubCB(const ros::TimerEvent& e)
       {
         planner_status_ = PlannerStatus::IDLE;
       } 
+      goal_count_ = 0;
     }
-     
   }
   else if (planner_status_ == PlannerStatus::IDLE) //publish initial position with height
   {
