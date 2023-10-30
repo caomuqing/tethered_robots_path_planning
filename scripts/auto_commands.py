@@ -200,7 +200,7 @@ class auto_commands:
 
         if (self.initialized and np.prod(self.completed_current) == 1 and idx==0):
             # or input("type s to proceed: ")=="s"):
-            xx = input("type any to proceed: ");
+            # xx = input("type any to proceed: ");
             # if xx!="s":
             #     return;
             self.updateGoalsRandom();
@@ -209,7 +209,7 @@ class auto_commands:
             self.publishgoals();
         if  idx==0 and self.initialized and (rospy.Time.now()-self.start_pub_time).to_sec()>800 \
         and self.currentrun<101:
-            xx = input("type any to proceed: ");
+            # xx = input("type any to proceed: ");
             # if xx!="s":
             #     return;
             # self.seed_number = self.seed_number +1;

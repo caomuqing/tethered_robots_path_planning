@@ -722,6 +722,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
               tmp = tmp->previous;
             }                  
             // exit(-1);
+            break; //not satisfy condition
           }
 
         }
