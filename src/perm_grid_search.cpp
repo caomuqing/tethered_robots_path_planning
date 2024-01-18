@@ -463,9 +463,9 @@ void perm_grid_search::recoverPath(NodePtr result_ptr)
       permsequence.perm.clear();
       for (size_t i = 0; i < 2; i++)
       {
-        for (size_t j = 0; j < tmp->previous->perm.cols(); j++)
+        for (size_t j = 0; j < tmp->perm.cols(); j++)
         {
-          permsequence.perm.push_back(tmp->previous->perm(i,j));
+          permsequence.perm.push_back(tmp->perm(i,j));
         }
       }
     }
@@ -662,6 +662,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
               tmp = tmp->previous;
             }                  
             // exit(-1);
+            break;
           }
 
         }
@@ -726,6 +727,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
           if (neighbor->g + bias_*neighbor->h < nodeptr->g + bias_*nodeptr->h)
           {
             nodeptr->previous = current;
+            nodeptr->action = neighbor->action;
             nodeptr->g = neighbor->g;
             nodeptr->h = neighbor->h;
             // std::cout<<blue<<"updating new parrent!!"<<std::endl;
@@ -1028,6 +1030,7 @@ exitloop:
         {
           std::cout <<green<< "==========[A*] found itermediate goal, now try reaching the terminal goal!!========= " <<std::endl;    
           std::vector<Eigen::Matrix<int, 2, Eigen::Dynamic>> pos_path_inter = pos_path_;
+          neptune2::PermSequence sequence_inter = permSequence_;          
           goalPos_ = goalpos_tmp;
           Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm_tmp = best_node_ptr_->perm;  
           Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> interaction_tmp = best_node_ptr_->interaction; 
@@ -1043,6 +1046,10 @@ exitloop:
             {
               pos_path_.insert(pos_path_.begin(), pos_path_inter[ii]);
             }
+            for (int ii = sequence_inter.actions.size()-1; ii >= 0; --ii) //recover the overall path
+            {
+              permSequence_.actions.insert(permSequence_.actions.begin(), sequence_inter.actions[ii]);
+            }         
             status = GOAL_REACHED;
             runtime_this_round_ = (double)timer_astar.ElapsedUs()/1000.0;
             node_used_num_ += node_used_num_1;
@@ -1174,5 +1181,6 @@ bool perm_grid_search::check3robotEnt(std::vector<Eigen::Vector2i>& v, Eigen::Ve
     }
     return false;
   }
+  else if ((v.size()>4)) return false;
   return true;
 }
