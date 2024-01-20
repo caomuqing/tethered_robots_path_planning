@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     timer_getting_odoms_.push_back(timerr);
   }
 
-  ros::Timer SetpointpubCBTimer = nh2.createTimer(ros::Duration(0.1), SetpointpubCB);  
+  ros::Timer SetpointpubCBTimer = nh2.createTimer(ros::Duration(0.05), SetpointpubCB);  
   ros::Subscriber goal_sub = nh3.subscribe<std_msgs::Float32MultiArray>("goals", 
                               1, GoalCallback);
   pub_log_ = nh1.advertise<nav_msgs::Odometry>("/firefly/log_for_plot", 1);
@@ -269,6 +269,10 @@ void SetpointpubCB(const ros::TimerEvent& e)
       agent_pos_proj_(1, i) = xy.dot(proj_vector_90_);
     }
 
+    int exchange_count = 0;
+    bool satisfy_con = true;
+    std::vector<Eigen::Vector3i> list_agents;
+
     for (int dim: {0,1})
     {
       for (int i = 0; i < number_of_agents_; ++i)
@@ -278,6 +282,8 @@ void SetpointpubCB(const ros::TimerEvent& e)
           if ((agent_pos_proj_(dim, i)-agent_pos_proj_(dim, j))*
             (agent_pos_proj_prev_(dim, i)-agent_pos_proj_prev_(dim, j))<0) //there is intersection
           {
+            exchange_count++;
+            list_agents.push_back(Vector3i(i,j,dim));
             int agent_current, agent_to_exchange;
             if (agent_pos_proj_(dim, i)<agent_pos_proj_(dim, j))
             {
@@ -319,6 +325,14 @@ void SetpointpubCB(const ros::TimerEvent& e)
               }          
             }
 
+            if (abs(agent_interaction_(agent_current, agent_to_exchange))>=2 || //does not satisfy condition
+                abs(agent_interaction_(agent_to_exchange, agent_current))>=2)
+            {
+              std::cout<<"2 ROBOT not satisfy condition -------------------------------------"<<std::endl;
+              std::cout<<"ij dim: "<< agent_current<<" "<< agent_to_exchange<<" "<<" "<<dim<<std::endl;
+
+            }
+
             for (int k = 0; k < number_of_agents_; ++k) //update interaction among 3 robots
             {
               if (k==agent_current ||k==agent_to_exchange) continue;
@@ -333,14 +347,40 @@ void SetpointpubCB(const ros::TimerEvent& e)
               }
               std::vector<int> agents_id {k, agent_current, agent_to_exchange};
               std::sort(agents_id.begin(), agents_id.end());
-              perm_search_->check3robotEnt(agent_interact_3d_(dim,
-                              agents_id[0], agents_id[1], agents_id[2]), to_add);
+              if (perm_search_->check3robotEnt(agent_interact_3d_(dim,
+                              agents_id[0], agents_id[1], agents_id[2]), to_add) == false)
+                {
+
+                  std::cout<<"not satisfy condition babe !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+                  std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+                  std::cout<<"ijk dim: "<< agents_id[0]<<" "<< agents_id[1]<<" "<< agents_id[2]<<" "<<dim<<std::endl;
+                  std::cout<<"interact3d: "<<std::endl;
+                  for (auto ii : agent_interact_3d_(dim, agents_id[0], agents_id[1], agents_id[2]))
+                  {
+                    std::cout<<ii<<std::endl;
+                  }
+                  
+                  std::cout<<"interact2d ij "<<agent_interaction_(agents_id[0], agents_id[1])<<std::endl;
+                  std::cout<<"interact2d ik "<<agent_interaction_(agents_id[0], agents_id[2])<<std::endl;
+                  std::cout<<"interact2d jk "<<agent_interaction_(agents_id[1], agents_id[2])<<std::endl;
+                }
 
             }            
           }          
         }    
       }
     }
+    if (exchange_count>1)
+    {
+      std::cout<<"More than one crossings at the same time!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+      std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+      for (auto vec : list_agents)
+      {
+        std::cout<<"Exchanging agents: "<<vec<<std::endl;
+      }
+      
+    }
+    
     getAgentPerm(agent_pos_proj_, agent_perm_);
     // std::cout<<"current agent positions in projected:"<<std::endl;
     // std::cout<<agent_pos_proj_<<std::endl;
@@ -401,7 +441,7 @@ void SetpointpubCB(const ros::TimerEvent& e)
     }
     else goal_count_ = 0;
 
-    if (goal_count_>5)
+    if (goal_count_>15)
     {
       if (sequence_vector_.size()!=current_leg_+1) //it is not the end
       {

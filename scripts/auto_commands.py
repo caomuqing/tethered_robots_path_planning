@@ -191,11 +191,11 @@ class auto_commands:
             # print("INIT: current number of mission completed is "+str(self.currentrun-1))
         
         if not self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.25:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.20:
             self.completed_current[idx] = 1;
             print("Robot "+str(idx)+" has completed current run !")
         elif self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.25:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.20:
             self.completed_current[idx] = 0;
 
         if (self.initialized and np.prod(self.completed_current) == 1 and idx==0):
@@ -249,7 +249,11 @@ class auto_commands:
                         condition_failed = True;
                 for j in range(0, i):
                     if LA.norm(np.array(self.goals[i])-np.array(self.goals[j]))<close_range:
-                        condition_failed = True;                
+                        condition_failed = True;          
+                    if LA.norm(np.array(self.goals[i][0])-np.array(self.goals[j][0]))<1.0:
+                        condition_failed = True;         
+                    if LA.norm(np.array(self.goals[i][1])-np.array(self.goals[j][1]))<1.0:
+                        condition_failed = True;          
         # print("goals updated!")
 
     def updateGoalsInitial(self):

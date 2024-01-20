@@ -612,6 +612,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
       neighbor->agent_positions = current->agent_positions;
       neighbor->interaction = current->interaction;        
       neighbor->interact_3d = current->interact_3d; 
+      neighbor-> previous = current;
       
       int agent_current = current->perm(dim, j);      
       int agent_to_exchange = current->perm(dim, j+1);
@@ -721,7 +722,7 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
               }   
               tmp = tmp->previous;
             }                  
-            // exit(-1);
+            exit(-1);
             break; //not satisfy condition
           }
 
@@ -730,7 +731,6 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
       }
       if (!satisfy_condition) continue;
       encode3dintoInteract(neighbor->interaction, neighbor->interact_3d);
-      neighbor-> previous = current;
       neighbor->h = getH(neighbor); 
       neighbor->g = getG(neighbor);
       MatrixXi idx(number_of_agents_+2, number_of_agents_);
@@ -743,51 +743,57 @@ void perm_grid_search::expandAndAddToQueue2(NodePtr current)
       {
         if (neighbor->perm != nodeptr->perm)
         {
-          std::cout<<red<<"H11111111111111111 "<<std::endl;
+          std::cout<<red<<"H11111111111111111111111111111111 "<<std::endl;
+          exit(-1);
+          continue; //this means the encoder is not complete, not good!
         }        
         if (neighbor->interaction != nodeptr->interaction)
         {
-          std::cout<<red<<"HMMMMMMMMMMMMMMMMMMM "<<std::endl;
+          std::cout<<red<<"HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM "<<std::endl;
+          exit(-1);
+          continue; //this means the encoder is not complete, not good!
         }
-        // if (neighbor->interaction == nodeptr->interaction)
-        // {
-        //   for (int dim :{0,1})
-        //   {
-        //     for (int i = 0; i < number_of_agents_; ++i)
-        //     {
-        //       for (int j = i+1; j < number_of_agents_; ++j)
-        //       {
-        //         for (int k = j+1; k < number_of_agents_; ++k)
-        //         {
-        //           if (encode3dSepcific(nodeptr->interact_3d(dim, i, j, k))!=
-        //               encode3dSepcific(neighbor->interact_3d(dim, i, j, k)))
-        //           {
-        //             std::cout<<red<<"found such case!!"<<std::endl;
-        //             std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
-        //             std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
-        //             std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
-        //             for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
-        //             {
-        //                 std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
+        if (neighbor->interaction == nodeptr->interaction)
+        {
+          for (int dim :{0,1})
+          {
+            for (int i = 0; i < number_of_agents_; ++i)
+            {
+              for (int j = i+1; j < number_of_agents_; ++j)
+              {
+                for (int k = j+1; k < number_of_agents_; ++k)
+                {
+                  if (encode3dSepcific(nodeptr->interact_3d(dim, i, j, k))!=
+                      encode3dSepcific(neighbor->interact_3d(dim, i, j, k)))
+                  {
+                    satisfy_condition = false;
+                    std::cout<<red<<"found such case!!"<<std::endl;
+                    std::cout<<red<<"ijk:: "<<i<<j<<k<<std::endl;  
+                    std::cout<<red<<"interaction:: "<<neighbor->interaction<<std::endl;
+                    std::cout<<red<<"nodeptr->interact_3d(dim, i, j, k) is "<<std::endl;
+                    for (int ii = 0; ii < nodeptr->interact_3d(dim, i, j, k).size(); ++ii)
+                    {
+                        std::cout<<red<<nodeptr->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
-        //             }                
-        //             std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
-        //             for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
-        //             {
-        //                 std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
+                    }                
+                    std::cout<<green<<"neighbor->interact_3d(dim, i, j, k) is "<<std::endl;
+                    for (int ii = 0; ii < neighbor->interact_3d(dim, i, j, k).size(); ++ii)
+                    {
+                        std::cout<<green<<neighbor->interact_3d(dim, i, j, k)[ii]<<std::endl;
 
-        //             } 
-        //             // exit(-1);
-        //           }
-        //         }
-        //       }
+                    } 
+                    exit(-1);
+                  }
+                }
+              }
 
-        //     }
-        //   }
+            }
+          }
 
-        //   // std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
-        // }
-
+          // std::cout<<red<<"interaction the same, but 3d interaction also same!!"<<std::endl;
+        }
+        if (!satisfy_condition) continue;  //do not add this node as it is not the same as previous
+        
         if (nodeptr->state == 1) //in open list
         {
           //update the node if the new one is better
@@ -983,6 +989,7 @@ bool perm_grid_search::run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,
   startPtr->next_agent = 0;
   startPtr->index = 0;
   startPtr->perm = start_perm;
+  encode3dintoInteract(interaction, interact_3d);  
   startPtr->interaction = interaction;
   startPtr->interact_3d = interact_3d;
   startPtr-> g =0.0;
@@ -1000,8 +1007,9 @@ bool perm_grid_search::run(Eigen::Matrix<int, 2, Eigen::Dynamic> start_perm,
   //   }
   // }
 
-  MatrixXi idx(3, number_of_agents_);
-  idx << start_perm, interaction.row(0);
+  // MatrixXi idx(3, number_of_agents_);
+  MatrixXi idx(number_of_agents_+2, number_of_agents_);
+  idx << start_perm, interaction;
   generated_nodes_.insert(idx, startPtr); 
   openList_.push(startPtr);
   node_used_num_ += 1;

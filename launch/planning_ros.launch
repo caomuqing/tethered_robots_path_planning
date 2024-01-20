@@ -1,7 +1,7 @@
 <launch>
 
 
-	<node name="neptune2" pkg="neptune2" type="planning_ros_node" output="screen" clear_params="false" launch-prefix="gdb -ex run --args"> 
+	<node name="neptune2" pkg="neptune2" type="planning_ros_node" output="screen" clear_params="false" > 
 		
 	</node>
 
