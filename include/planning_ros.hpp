@@ -35,7 +35,7 @@ enum PlannerStatus
   MOVING_END = 3
 };
 
-int number_of_agents_ = 5;
+int number_of_agents_ = 10;
 Vector2d grid_pos_origin_(-6.0, -6.0);
 Vector2d grid_size_(2.0, 2.0);
 bool benchmark_mode_ = false;

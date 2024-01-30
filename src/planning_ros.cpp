@@ -259,7 +259,7 @@ void SetpointpubCB(const ros::TimerEvent& e)
     getProjectionPlane();
   }
 
-  if (found_projection_ && update_timer_.ElapsedMs()>100.0 && !benchmark_mode_) //update agent status
+  if (found_projection_ && update_timer_.ElapsedMs()>20.0) //update agent status
   {
     agent_pos_proj_prev_ = agent_pos_proj_;
     for (int i = 0; i < number_of_agents_; ++i)
@@ -273,113 +273,113 @@ void SetpointpubCB(const ros::TimerEvent& e)
     bool satisfy_con = true;
     std::vector<Eigen::Vector3i> list_agents;
 
-    for (int dim: {0,1})
-    {
-      for (int i = 0; i < number_of_agents_; ++i)
-      {
-        for (int j = i+1; j < number_of_agents_; ++j)
-        {
-          if ((agent_pos_proj_(dim, i)-agent_pos_proj_(dim, j))*
-            (agent_pos_proj_prev_(dim, i)-agent_pos_proj_prev_(dim, j))<0) //there is intersection
-          {
-            exchange_count++;
-            list_agents.push_back(Vector3i(i,j,dim));
-            int agent_current, agent_to_exchange;
-            if (agent_pos_proj_(dim, i)<agent_pos_proj_(dim, j))
-            {
-              agent_current = j;
-              agent_to_exchange = i;
-            }
-            else
-            {
-              agent_current = i;
-              agent_to_exchange = j;
-            }
-            int infront_or_behind = (agent_pos_proj_(1-dim, agent_current) 
-                                    < agent_pos_proj_(1-dim, agent_to_exchange))?1:-1;
+    // for (int dim: {0,1})
+    // {
+    //   for (int i = 0; i < number_of_agents_; ++i)
+    //   {
+    //     for (int j = i+1; j < number_of_agents_; ++j)
+    //     {
+    //       if ((agent_pos_proj_(dim, i)-agent_pos_proj_(dim, j))*
+    //         (agent_pos_proj_prev_(dim, i)-agent_pos_proj_prev_(dim, j))<0) //there is intersection
+    //       {
+    //         exchange_count++;
+    //         list_agents.push_back(Vector3i(i,j,dim));
+    //         int agent_current, agent_to_exchange;
+    //         if (agent_pos_proj_(dim, i)<agent_pos_proj_(dim, j))
+    //         {
+    //           agent_current = j;
+    //           agent_to_exchange = i;
+    //         }
+    //         else
+    //         {
+    //           agent_current = i;
+    //           agent_to_exchange = j;
+    //         }
+    //         int infront_or_behind = (agent_pos_proj_(1-dim, agent_current) 
+    //                                 < agent_pos_proj_(1-dim, agent_to_exchange))?1:-1;
 
-            if (dim==0) //first axis
-            {
-              if (agent_current< agent_to_exchange) //only keeping the upper diagonal 
-              {
-                agent_interaction_(agent_current, agent_to_exchange) += 
-                  infront_or_behind;
-              }
-              else
-              {
-                agent_interaction_(agent_to_exchange, agent_current) += 
-                  infront_or_behind;
-              }        
-            }
-            else //second axis
-            {
-              if (agent_current< agent_to_exchange) //LOWER diagonal
-              {
-                agent_interaction_(agent_to_exchange, agent_current) += 
-                  infront_or_behind;
-              }
-              else
-              {
-                agent_interaction_(agent_current, agent_to_exchange) += 
-                  infront_or_behind;
-              }          
-            }
+    //         if (dim==0) //first axis
+    //         {
+    //           if (agent_current< agent_to_exchange) //only keeping the upper diagonal 
+    //           {
+    //             agent_interaction_(agent_current, agent_to_exchange) += 
+    //               infront_or_behind;
+    //           }
+    //           else
+    //           {
+    //             agent_interaction_(agent_to_exchange, agent_current) += 
+    //               infront_or_behind;
+    //           }        
+    //         }
+    //         else //second axis
+    //         {
+    //           if (agent_current< agent_to_exchange) //LOWER diagonal
+    //           {
+    //             agent_interaction_(agent_to_exchange, agent_current) += 
+    //               infront_or_behind;
+    //           }
+    //           else
+    //           {
+    //             agent_interaction_(agent_current, agent_to_exchange) += 
+    //               infront_or_behind;
+    //           }          
+    //         }
 
-            if (abs(agent_interaction_(agent_current, agent_to_exchange))>=2 || //does not satisfy condition
-                abs(agent_interaction_(agent_to_exchange, agent_current))>=2)
-            {
-              std::cout<<"2 ROBOT not satisfy condition -------------------------------------"<<std::endl;
-              std::cout<<"ij dim: "<< agent_current<<" "<< agent_to_exchange<<" "<<" "<<dim<<std::endl;
+    //         if (abs(agent_interaction_(agent_current, agent_to_exchange))>=2 || //does not satisfy condition
+    //             abs(agent_interaction_(agent_to_exchange, agent_current))>=2)
+    //         {
+    //           std::cout<<"2 ROBOT not satisfy condition -------------------------------------"<<std::endl;
+    //           std::cout<<"ij dim: "<< agent_current<<" "<< agent_to_exchange<<" "<<" "<<dim<<std::endl;
 
-            }
+    //         }
 
-            for (int k = 0; k < number_of_agents_; ++k) //update interaction among 3 robots
-            {
-              if (k==agent_current ||k==agent_to_exchange) continue;
-              Vector2i to_add;
-              if (agent_pos_proj_(dim, k)<agent_pos_proj_(dim, agent_current))
-              {
-                to_add << 2, infront_or_behind;
-              }
-              else 
-              {
-                to_add << 1, infront_or_behind;
-              }
-              std::vector<int> agents_id {k, agent_current, agent_to_exchange};
-              std::sort(agents_id.begin(), agents_id.end());
-              if (perm_search_->check3robotEnt(agent_interact_3d_(dim,
-                              agents_id[0], agents_id[1], agents_id[2]), to_add) == false)
-                {
+    //         for (int k = 0; k < number_of_agents_; ++k) //update interaction among 3 robots
+    //         {
+    //           if (k==agent_current ||k==agent_to_exchange) continue;
+    //           Vector2i to_add;
+    //           if (agent_pos_proj_(dim, k)<agent_pos_proj_(dim, agent_current))
+    //           {
+    //             to_add << 2, infront_or_behind;
+    //           }
+    //           else 
+    //           {
+    //             to_add << 1, infront_or_behind;
+    //           }
+    //           std::vector<int> agents_id {k, agent_current, agent_to_exchange};
+    //           std::sort(agents_id.begin(), agents_id.end());
+    //           if (perm_search_->check3robotEnt(agent_interact_3d_(dim,
+    //                           agents_id[0], agents_id[1], agents_id[2]), to_add) == false)
+    //             {
 
-                  std::cout<<"not satisfy condition babe !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
-                  std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
-                  std::cout<<"ijk dim: "<< agents_id[0]<<" "<< agents_id[1]<<" "<< agents_id[2]<<" "<<dim<<std::endl;
-                  std::cout<<"interact3d: "<<std::endl;
-                  for (auto ii : agent_interact_3d_(dim, agents_id[0], agents_id[1], agents_id[2]))
-                  {
-                    std::cout<<ii<<std::endl;
-                  }
+    //               std::cout<<"not satisfy condition babe !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+    //               std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+    //               std::cout<<"ijk dim: "<< agents_id[0]<<" "<< agents_id[1]<<" "<< agents_id[2]<<" "<<dim<<std::endl;
+    //               std::cout<<"interact3d: "<<std::endl;
+    //               for (auto ii : agent_interact_3d_(dim, agents_id[0], agents_id[1], agents_id[2]))
+    //               {
+    //                 std::cout<<ii<<std::endl;
+    //               }
                   
-                  std::cout<<"interact2d ij "<<agent_interaction_(agents_id[0], agents_id[1])<<std::endl;
-                  std::cout<<"interact2d ik "<<agent_interaction_(agents_id[0], agents_id[2])<<std::endl;
-                  std::cout<<"interact2d jk "<<agent_interaction_(agents_id[1], agents_id[2])<<std::endl;
-                }
+    //               std::cout<<"interact2d ij "<<agent_interaction_(agents_id[0], agents_id[1])<<std::endl;
+    //               std::cout<<"interact2d ik "<<agent_interaction_(agents_id[0], agents_id[2])<<std::endl;
+    //               std::cout<<"interact2d jk "<<agent_interaction_(agents_id[1], agents_id[2])<<std::endl;
+    //             }
 
-            }            
-          }          
-        }    
-      }
-    }
-    if (exchange_count>1)
-    {
-      std::cout<<"More than one crossings at the same time!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
-      std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
-      for (auto vec : list_agents)
-      {
-        std::cout<<"Exchanging agents: "<<vec<<std::endl;
-      }
+    //         }            
+    //       }          
+    //     }    
+    //   }
+    // }
+    // if (exchange_count>1)
+    // {
+    //   std::cout<<"More than one crossings at the same time!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+    //   std::cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+    //   for (auto vec : list_agents)
+    //   {
+    //     std::cout<<"Exchanging agents: "<<vec<<std::endl;
+    //   }
       
-    }
+    // }
     
     getAgentPerm(agent_pos_proj_, agent_perm_);
     // std::cout<<"current agent positions in projected:"<<std::endl;
@@ -416,6 +416,11 @@ void SetpointpubCB(const ros::TimerEvent& e)
     }
     else
     {
+      neptune2::PermAction fake_action;
+      fake_action.perm_id = -100;
+      fake_action.axis = -100;
+      fake_action.action = -100;
+      permsequence.actions.push_back(fake_action);           
       goal_perm_ = final_goal_perm_;
     }
 
@@ -451,6 +456,8 @@ void SetpointpubCB(const ros::TimerEvent& e)
       else
       {
         planner_status_ = PlannerStatus::IDLE;
+        neptune2::PermSequence permsequence;
+        pub_permsequence_.publish(permsequence);
       } 
       goal_count_ = 0;
     }

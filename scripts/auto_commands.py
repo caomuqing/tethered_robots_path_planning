@@ -19,15 +19,15 @@ from numpy import linalg as LA
 from snapstack_msgs.msg import Goal, State
 
 benchmark_mode = False
-number_of_robots = 5;
+number_of_robots = 10;
 x_min = -10.0;
 x_max = 10.0;
 y_min = -10.0;
 y_max = 10.0;
-tether_length = 13; #previous was 13, this value limites the horizontal distance between base and goal
+tether_length = 20; #previous was 13, this value limites the horizontal distance between base and goal
 goal_height = 5.0;
-close_range = 3.0;
-circle_init_bases = False;
+close_range = 2.0;
+circle_init_bases = True;
 # base_positions = [[-10, 5, 0.0],  #unity sim scene1
 #                   [-5.0, -10, 0.0],
 #                   [10.0, -5.0, 0.0],
@@ -191,13 +191,15 @@ class auto_commands:
             # print("INIT: current number of mission completed is "+str(self.currentrun-1))
         
         if not self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.20:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))<0.60:
             self.completed_current[idx] = 1;
             print("Robot "+str(idx)+" has completed current run !")
         elif self.completed_current[idx] and \
-            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.20:
+            LA.norm(np.array(self.pos[idx][0:2])-np.array(self.goals[idx][0:2]))>0.60:
             self.completed_current[idx] = 0;
-
+        # if idx==0 and sum(self.completed_current) / len(self.completed_current)>0.7:
+        #     print("Robot 1 I AM!")
+            # for i in range(0, number_of_robots):  
         if (self.initialized and np.prod(self.completed_current) == 1 and idx==0):
             # or input("type s to proceed: ")=="s"):
             # xx = input("type any to proceed: ");
@@ -250,9 +252,9 @@ class auto_commands:
                 for j in range(0, i):
                     if LA.norm(np.array(self.goals[i])-np.array(self.goals[j]))<close_range:
                         condition_failed = True;          
-                    if LA.norm(np.array(self.goals[i][0])-np.array(self.goals[j][0]))<1.0:
+                    if LA.norm(np.array(self.goals[i][0])-np.array(self.goals[j][0]))<0.8:
                         condition_failed = True;         
-                    if LA.norm(np.array(self.goals[i][1])-np.array(self.goals[j][1]))<1.0:
+                    if LA.norm(np.array(self.goals[i][1])-np.array(self.goals[j][1]))<0.8:
                         condition_failed = True;          
         # print("goals updated!")
 
